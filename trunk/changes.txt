@@ -1,0 +1,7 @@
+#0.3
+- Added a scrollbar for all xterm sessions
+
+#0.3.1
+- Changed the way that SoftAPs and the DHCP server interact with each other.  The user may now launch a SoftAP independent of a DHCP server; however, an autolaunch option is provided in the SoftAP menu that will speed up the process for a quick launch of full routing capabilities.  As well, this change allowed for the user to launch a dhcp server on any NIC they choose.
+ 
+- Added the option to tail the DHCP log so that Hostnames of users are shown.

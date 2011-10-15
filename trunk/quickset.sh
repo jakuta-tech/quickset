@@ -46,6 +46,7 @@ function head()
 
 
 ##~The Following Required Programs Must be in Your Path for Full Functionality~##
+## This was decided as the de facto standard versus having the script look in locations for the programs themselves with the risk of them not being there.  Odds favor that they will be in /usr/bin or some other location readily available in your path...
 ## macchanger
 ## Hamster & Ferret
 ## sslstrip
@@ -75,15 +76,6 @@ function head()
 ### Figure out if old PIDs are used during a cycle...if not we'll do PID assignments to ensure kill -9s
 ### Use PIDs to make a greppable list
 
-### Sanitize available devices via
-# ifconfig -s | awk '{print $1}' | grep -v Iface > dev_list
-# echo "make input"
-# read x
-# grep -i $x dev_list > /dev/null
-# if [ $? -ne 0 ];then
-# 	echo "You made bad choice"
-# fi
-
 ### Find out why the leases look this way /var/lib/dhcp3/dhcpd.leases
 ###  lease 192.168.10.100 {
 ###  starts 4 2011/10/06 19:01:58;
@@ -91,6 +83,8 @@ function head()
 ###  cltt 4 2011/10/06 19:01:58;
 ###  binding state active;
 ###  next binding state free;
+
+### Check for calling of a device or variable to ensure its been set so that quickset.sh doesn't error out....
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -118,11 +112,16 @@ function head()
 ## Hindsight 20/20 the solution was simple, but it took every ounce of patience I had to keep pursuing the end goal.  This just shows how much dedication really pays off if you want something bad enough.  It's what I've truly come to love about my affliction with hacking.
 
 
-## For Functions with Functions I have found that I like to declare my variables for use within a function at the beginning of the function, then I list my sub-functions, at the end of the sub-functions you will find the parent functions commands.  It may be a strange way to do it, but it works for my readability purposes.
+## For Functions within Functions (sub-functions), I have found that I like to declare my variables for use within a function at the beginning of the function, then I list my sub-functions, at the end of the sub-functions you will find the parent functions commands.  It may be a strange way to do it, but it works for my readability purposes.
+
+## On 15 October a function for ensuring that proper device names are used was instituted.
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## sed/grep function to check and ensure that when a MAC address is given, it is legit and can be used.
+
+## Functionality to allow the user the enter device NIC names within the script on the off chance that the user has not already named them during init_setup--().  As of now, failure to fully enter in all required device NICs during init_setup--() will force the user to call naming--() thereby dramatically slowing down the effectivness of quickset.sh for a simple feature that should have already been thought of.
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -148,18 +147,20 @@ function head()
 ## Roughly 5 minutes into it a segmentation fault occured
 
 ## My next step will be to try this on Lucid Lynx since it is roughly the same
+## Lucid Lynx holding very strong with no segmentation faults
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## First and foremost, to God above for giving me the abilities I have, Amen.
 
-## My scripting style is derived from carlos_perez@darkoperator.com
-## Credit for some of the attacks in this script to him as well
+## My main scripting style is derived from carlos_perez@darkoperator.com
+## Credit for some of the routing features in this script to him as well
 
 ## Grant Pearson for having me RTFM with xterm debugging
 
-## comaX for showing me how much easier it is to follow conditional statements if blank spaces are added in
+## comaX for showing me how much easier it is to follow conditional statements if blank spaces are added in.  This comes in really handy with editors like Kate with folding markers shown.
+## Credit to his script yamas.sh for showing me how to enter multiple inputs for a variable horizontally or vertically.  See custom_dns--() for details of horizontal input
 
 ## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -178,7 +179,7 @@ echo -e "\033[1;32m\n-----------------------------------------------------------
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
 1) Wireless NIC           [\033[1;33m$pre_pii\033[36m] (Disregard this if already in Monitor Mode)
 
-2) Enable Monitor Mode    [\033[1;33m$pre_pii\033[36m] (Disregard this if already in Monitor Mode)
+2) Enable Monitor Mode    [\033[1;33m$pre_pii\033[36m] (Do Not Make Input Here)
 
 3) Internet Connected NIC [\033[1;33m$IE\033[36m]
 
@@ -197,7 +198,14 @@ case $init_var in
 	1) mon_live=x
 	echo -e "\033[36m\nDefine NIC"
 	read pre_pii
-	init_setup--;;
+	dev_check_var=$pre_pii
+	dev_check--
+	if [[ -z $dev_check ]];then
+		init_setup--
+	else
+		pre_pii= ## Nulled
+		init_setup--
+	fi;;
 
 	2) if [[ $mon_live != x ]]; then
 		echo -e "\033[31mYOU MUST DEFINE THE WIRELESS NIC FIRST"
@@ -210,11 +218,25 @@ case $init_var in
 
 	3) echo -e "\033[36m\nDefine NIC" 
 	read IE
-	init_setup--;;
+	dev_check_var=$IE
+	dev_check--
+	if [[ -z $dev_check ]];then
+		init_setup--
+	else
+		IE= ## Nulled
+		init_setup--
+	fi;;
 
 	4) echo -e "\033[36m\nDefine NIC" 
 	read pii
-	init_setup--;;
+	dev_check_var=$pii
+	dev_check--
+	if [[ -z $dev_check ]];then
+		init_setup--
+	else
+		pii= ## Nulled
+		init_setup--
+	fi;;
 
 	5) kill_mon=x
 	monitormode--
@@ -230,7 +252,7 @@ case $init_var in
 	*) init_setup--;;
 esac
 }
-
+### Begin case hunting here...up through MARK
 monitormode--()
 {
 var= ## Nulled
@@ -250,6 +272,12 @@ echo -e "\033[31m\n
 	while [ -z $KM ];do
 		echo -e "\033[36m\nMonitor Mode Device to Kill?"
 		read KM
+		dev_check_var=$KM
+		dev_check--
+		if [[ $dev_check = x ]];then
+			KM= ## Nulled
+		fi
+
 	done
 
 	while [ -z $var ];do
@@ -259,7 +287,14 @@ echo -e "\033[31m\n
 			y|Y) while [ -z $KM_II ];do 
 				echo -e "\033[36m\nPhysical Device Name?"
 				read KM_II
+				dev_check_var=$KM_II
+				dev_check--
+				if [[ $dev_check = x ]];then
+					KM_II= ## Nulled
+				fi
+
 			done
+
 			echo -e "\033[1;33m"
 			airmon-ng stop $KM_II && airmon-ng stop $KM ;;
 
@@ -268,6 +303,7 @@ echo -e "\033[31m\n
 
 			*) var=
 		esac
+
 	done
 
 	echo -e "\n\n\033[1;32mPress Enter to Continue"
@@ -279,6 +315,12 @@ else
 	while [ -z $var ];do
 		echo -e "\033[36m\nDevice Name Assigned for Monitor Mode on \033[1;33m$pre_pii\033[36m?\n(i.e.  mon0, mon1, mon2?, etc....)"
 		read var
+		dev_check_var=$var
+		dev_check--
+		if [[ $dev_check = x ]];then
+			var= ## Nulled
+		fi
+
 	done
 
 	pii=$var
@@ -314,6 +356,12 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 	while [ -z $mac_dev ];do
 		echo -e "\033[36m\n\n\n\n\n\nNIC to Change?"
 		read mac_dev
+		dev_check_var=$mac_dev
+		dev_check--
+		if [[ $dev_check = x ]];then
+			mac_dev=
+		fi
+
 	done
 
 	while [ -z $rand ];do
@@ -323,8 +371,8 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			y|Y) ;;
 
 			n|N) while [ -z $sam ];do
-			echo -e "\033[36m\nDesired MAC Address for \033[1;33m$mac_dev\033[36m?"
-			read sam
+				echo -e "\033[36m\nDesired MAC Address for \033[1;33m$mac_dev\033[36m?"
+				read sam
 			done;;
 
 			*) rand= ;;
@@ -338,6 +386,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			n|N|y|Y) var_II=x ;;
 			*) var_II= ;;
 		esac
+
 	done
 
 	case $var in
@@ -345,6 +394,12 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			y|Y) while [ -z $mac_devII ];do
 				echo -e "\033[36m\nMonitor Mode NIC name?"
 				read mac_devII
+				dev_check_var=$mac_devII
+				dev_check--
+				if [[ $dev_check = x ]];then
+					mac_devII= ## Nulled
+				fi
+
 			done
 
 			ifconfig $mac_dev down
@@ -373,10 +428,21 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 					read
 					mac_control--
 				fi
+
 			fi;;
 
-			n|N) echo -e "\033[36m\nMonitor Mode NIC name?"
-			read mac_devII
+			n|N) mac_devII= ## Nulled
+			while [ -z $mac_devII ];do
+				echo -e "\033[36m\nMonitor Mode NIC name?"
+				read mac_devII
+				dev_check_var=$mac_devII
+				dev_check--
+				if [[ $dev_check = x ]];then
+					mac_devII= ## Nulled
+				fi
+
+			done
+
 			ifconfig $mac_dev down
 			ifconfig $mac_devII down
 			clear
@@ -401,7 +467,9 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 					read
 					mac_control--
 				fi
+
 			fi;;
+
 		esac;;
 
 		n|N)
@@ -437,7 +505,9 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 				read
 				mac_control--
 			fi;;
+
 		esac;;
+
 	esac
 	}
 
@@ -471,6 +541,19 @@ case $var in
 
 	*) mac_control--;;
 esac
+}
+
+dev_check--()
+{
+dev=$(ifconfig -s | awk '{print $1}' | grep -v Iface)
+echo $dev | grep -wi $dev_check_var > /dev/null
+if [ $? -ne 0 ];then
+	echo -e "\033[31mDevice does NOT exist"
+	sleep .7
+	dev_check=x
+else
+	dev_check=
+fi
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
@@ -992,20 +1075,29 @@ ferret--()
 
 		2) echo -e "\033[36m\nDevice?"
 		read fer_dev
-		ferret_II--;;
+		dev_check_var=$fer_dev
+		dev_check--
+		if [[ -z $dev_check ]];then
+			ferret_II--
+		else
+			fer_dev= ## Nulled
+			ferret_II--
+		fi;;
 
-		3) echo -e "\033[36m\n1) Wireless\n2) Wired"
-		read var
-		case $var in
-			1) fer_type=Wireless
-			wifi_check=x;;
+		3) var= ## Nulled
+		while [ -z $var ];do
+			echo -e "\033[36m\n1) Wireless\n2) Wired"
+			read var
+			case $var in
+				1) fer_type=Wireless
+				wifi_check=x;;
 
-			2) fer_type=Wired
-			wifi_check=y;;
+				2) fer_type=Wired
+				wifi_check=y;;
 
-			*) fer_type=Wireless
-			wifi_check=x;;
-		esac
+				*) var= ;;
+			esac
+		done
 
 		ferret_II--;;
 
@@ -1032,9 +1124,10 @@ ferret--()
 				y) xterm -bg black -fg grey -sb -rightbar -title Ferret -e ferret -i $fer_dev & 
 				atk_menu--;;
 			esac
+
 		fi;;
 
-		*) ferret_II--;;
+		*) ferret_II--;;MARK
 	esac
 	}
 
@@ -2414,6 +2507,7 @@ if [ -z $1  ]; then
 	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
 	kill_mon= ## Nulled
 	mon_live= ## Nulled
+	dev_check= ## Nulled
 	greet--
 else
 	usage--

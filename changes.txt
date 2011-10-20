@@ -9,3 +9,9 @@
 #0.3.3
 - Added in customized DNS entry option for the DHCP Server.  In a later version this option will be entered with new lines, right now it it a one variable method where each IP is split by a space versus by pressing enter...
 
+#0.3.5
+- Added a function that verifies a NIC exists prior to trying to use it.
+- Removed a lot of needless "While Loops"
+
+#0.5
+- Added in a function that allows the user to arpspoof multiple targets in one swoop

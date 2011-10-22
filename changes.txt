@@ -1,3 +1,6 @@
+Current Version: 0.5
+
+Changes:
 #0.3
 - Added a scrollbar for all xterm sessions
 

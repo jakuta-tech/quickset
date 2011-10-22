@@ -3,7 +3,7 @@ function head()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 0.5
+## Version: 0.7
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -87,6 +87,8 @@ function head()
 ### Check for calling of a device or variable to ensure its been set so that quickset.sh doesn't error out....
 
 ### Perhaps simplify arpspoof--() with respect towards single/multiple tgts
+
+### svn up in update--(), this has some issue with regards to calling "svn up" from within a directory without .svn -->  Skipped '.' It gives an exit flag of 0 which defeats my purposes...  Only a factor if the user has quickset.sh in a directory called quickset that was not created with subversion itself.  To be dealt with at a later time 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -112,8 +114,6 @@ function head()
 ## Functionality to allow the user the enter device NIC names within the script on the off chance that the user has not already named them during init_setup--().  As of now, failure to fully enter in all required device NICs during init_setup--() will force the user to call naming--() thereby dramatically slowing down the effectivness of quickset.sh for a simple feature that should have already been thought of.
 
 ## Sanitization of every input with regards to preventing user error/"hacking (gets me in the mindset for real coding languages in the future to actually think of what I am coding as a whole, and think about how it could be used against the box it is run on exploit wise, all because I failed to account for certain user inputs...Think SQLI)"
-
-## Update capability within the script
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -133,7 +133,7 @@ function head()
 ## Grant Pearson for having me RTFM with xterm debugging
 
 ## comaX for showing me how much easier it is to follow conditional statements if blank spaces are added in.  This comes in really handy with editors like Kate with folding markers shown.
-## Credit for mass_arp--()
+## Credit for mass_arp--(), and update--()
 
 ## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -543,7 +543,7 @@ echo -e "\033[1;34m\n\n\n\n\n\n\n
 QuickSet - A Quick Way to Setup a Wired/Wireless Hack
       Author: Snafu ----> will@configitnow.com
            Read Comments Prior to Usage
-           Version 0.5 (16 October 2011)\033[1;33m
+           Version 0.7 (16 October 2011)\033[1;33m
 
 
         IP Forwarding via the Kernel Enabled
@@ -844,24 +844,35 @@ else
 					svn co http://quickset.googlecode.com/svn/trunk quickset
 					if [ $? -ne 0 ];then
 						echo -e "\033[1;33mUpdate Failed!"
+						update_check=fail
 					else
 						cd quickset && chmod 755 quickset.sh
 						echo -e "\033[1;33m[-] Script updated and now located in $PWD"
+# 						new_loc=$PWD
+						update_check=pass
 					fi
 
 				else
 					svn up
 					if [ $? -ne 0 ];then
 						echo -e "\033[1;33mUpdate Failed!"
+						update_check=fail
 					else
-						echo -e "\033[1;33m[-] Script updated!"
 						chmod 755 quickset.sh
+						echo -e "\033[1;33m[-] Script updated!"
+# 						new_loc=$PWD
+						update_check=pass
 					fi
+
 				fi
 
-				sleep 3
-				exit 1
-				./quickset.sh;;
+				if [[ $update_check = "pass" ]];then
+# 					gnome-terminal -e $new_loc/quickset.sh &
+					./quickset.sh
+					exit 0
+				else
+					main_menu--
+				fi;;
 
 				n|N) main_menu--;;
 
@@ -2629,7 +2640,7 @@ if [ -z $1  ]; then
 	kill_mon= ## Nulled
 	mon_live= ## Nulled
 	dev_check= ## Nulled
-	current_ver="0.5"
+	current_ver="0.7"
 	greet--
 else
 	usage--

@@ -860,8 +860,8 @@ else
 				fi
 
 				sleep 3
-				./quickset.sh
-				exit 1;;
+				exit 1
+				./quickset.sh;;
 
 				n|N) main_menu--;;
 
@@ -2629,7 +2629,7 @@ if [ -z $1  ]; then
 	kill_mon= ## Nulled
 	mon_live= ## Nulled
 	dev_check= ## Nulled
-	current_ver="0.3"
+	current_ver="0.5"
 	greet--
 else
 	usage--

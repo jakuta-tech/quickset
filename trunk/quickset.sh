@@ -870,7 +870,7 @@ else
 
 				if [[ $update_check = "pass" ]];then
 # 					gnome-terminal -e $new_loc/quickset.sh &
-					./quickset.sh
+					./quickset.sh &
 					exit
 				else
 					main_menu--

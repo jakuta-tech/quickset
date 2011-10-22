@@ -825,43 +825,50 @@ exit
 
 update--()
 {
-update_ver=`curl http://quickset.googlecode.com/svn/trunk/changes.txt | grep -iw "Current Version:" | awk '{print $3}'`
+update_ver=$(curl http://quickset.googlecode.com/svn/trunk/changes.txt)
 if [ $? -ne 0 ];then
 	echo -e "\033[1;33mNo Internet Connection!"
 	sleep 1
 	main_menu--
 else
+	update_ver=$(echo $update_ver | grep -iw "Current Version:" | awk '{print $3}')
 	if [[ $update_ver > $current_ver ]];then
 		var=
 		while [ -z $var ];do
-		echo -e "\033[1;33mYou are running version $current_ver,\033[36m do you want to update to \033[1;33m$update_ver\033[36m? (y or n)"
-		read update
-		case $update in
-			y|Y) echo "\033[1;33m[+] Updating script..."
-			### Need to check to see that user is in directory...
-# 			if dir exist && in directory ;then
-# 				svn up
+			echo -e "\n\n\033[1;33mYou are running version $current_ver\033[1;33m.\033[36m  Do you want to update to \033[1;33m$update_ver\033[36m? (y or n)"
+			read update
+			case $update in
+				y|Y) echo -e "\033[1;33m[+] Updating script..."
+				echo $PWD | grep -iw quickset > /dev/null
 				if [ $? -ne 0 ];then
-					echo -e "\033[1;33mUpdate Failed!"
+					svn co http://quickset.googlecode.com/svn/trunk quickset
+					if [ $? -ne 0 ];then
+						echo -e "\033[1;33mUpdate Failed!"
+					else
+						cd quickset && chmod 755 quickset.sh
+						echo -e "\033[1;33m[-] Script updated and now located in $PWD"
+					fi
+
 				else
-					echo "\033[1;33m[-] Script updated !"
-					chmod 755 quickset.sh
+					svn up
+					if [ $? -ne 0 ];then
+						echo -e "\033[1;33mUpdate Failed!"
+					else
+						echo -e "\033[1;33m[-] Script updated!"
+						chmod 755 quickset.sh
+					fi
 				fi
 
-# 			else
-				svn co http://quickset.googlecode.com/svn/trunk quickset
-# 				wget -q http://comax.fr/yamas/bt5/yamas.sh -O $0
-				echo "\033[1;33m[-] Script updated !"
-				cd quickset && chmod 755 quickset.sh
-# 			fi
-			sleep 3
-			./quickset.sh
-			exit 1;;
+				sleep 3
+				./quickset.sh
+				exit 1;;
 
-			n|N) main_menu--;;
+				n|N) main_menu--;;
 
-			*) var= ;;
-		esac
+				*) var= ;;
+			esac
+
+		done
 
 	else
 		echo -e "\033[1;33mYou Are Running The Latest Version!"
@@ -2611,7 +2618,7 @@ venue--
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 if [ "$UID" -ne 0 ];then
-	echo -e "\033[38mMust be ROOT to run this script"
+	echo -e "\033[31mMust be ROOT to run this script"
 	exit 87
 fi
 
@@ -2622,7 +2629,7 @@ if [ -z $1  ]; then
 	kill_mon= ## Nulled
 	mon_live= ## Nulled
 	dev_check= ## Nulled
-	current_ver="0.5"
+	current_ver="0.3"
 	greet--
 else
 	usage--

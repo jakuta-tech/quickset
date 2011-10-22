@@ -825,6 +825,7 @@ exit
 
 update--()
 {
+clear
 update_ver=$(curl http://quickset.googlecode.com/svn/trunk/changes.txt)
 if [ $? -ne 0 ];then
 	echo -e "\033[1;33mNo Internet Connection!"
@@ -848,6 +849,7 @@ else
 					else
 						cd quickset && chmod 755 quickset.sh
 						echo -e "\033[1;33m[-] Script updated and now located in $PWD"
+						sleep 2
 # 						new_loc=$PWD
 						update_check=pass
 					fi
@@ -869,7 +871,7 @@ else
 				if [[ $update_check = "pass" ]];then
 # 					gnome-terminal -e $new_loc/quickset.sh &
 					./quickset.sh
-					exit 0
+					exit
 				else
 					main_menu--
 				fi;;

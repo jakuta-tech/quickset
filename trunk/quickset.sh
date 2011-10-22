@@ -581,7 +581,9 @@ Make Your Selection Below
 
 5) Routing Features
 
-6) Exit Script\033[1;34m
+6) Check for Updates
+
+7) Exit Script\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read var
 case $var in
@@ -598,9 +600,9 @@ case $var in
 
 	5) routing--;;
 
-# 	6) update--;;
+	6) update--;;
 
-	6) cleanup--;;
+	7) cleanup--;;
 
 	*) main_menu--;;
 esac
@@ -823,27 +825,51 @@ exit
 
 update--()
 {
-echo foo
-### Got some work to do here in deciding how I'd like to handle this...Not going to implement it till 0.7
-# ## Updating and running from within self after update!
-# wget -q http://comax.fr/yamas/bt5/version -O /tmp/version # Get last version number
-# last_version=$(cat /tmp/version) #store it to variable
-# rm /tmp/version #remove temp version file
-# if [[ $last_version > $version ]];then # Comparing to current version
-# 	echo -e "You are running version \033[31m$version\033[m, do you want to update to \033[32m$last_version\033[m? (Y/N)"
-# 	read update
-# 	if [[ $update = Y || $update = y ]];then
-# 		echo "[+] Updating script..."
-# 		wget -q http://comax.fr/yamas/bt5/yamas.sh -O $0
-# 		chmod +x $0
-# 		echo "[-] Script updated !"
-# 		cp $0 /usr/bin/yamas
-# 		chmod +x /usr/bin/yamas
-# 		echo "Script should now be installed, launching yamas !"
-# 		sleep 3
-# 		yamas
-# 		exit 1
-# 	fi
+update_ver=`curl http://quickset.googlecode.com/svn/trunk/changes.txt | grep -iw "Current Version:" | awk '{print $3}'`
+if [ $? -ne 0 ];then
+	echo -e "\033[1;33mNo Internet Connection!"
+	sleep 1
+	main_menu--
+else
+	if [[ $update_ver > $current_ver ]];then
+		var=
+		while [ -z $var ];do
+		echo -e "\033[1;33mYou are running version $current_ver,\033[36m do you want to update to \033[1;33m$update_ver\033[36m? (y or n)"
+		read update
+		case $update in
+			y|Y) echo "\033[1;33m[+] Updating script..."
+			### Need to check to see that user is in directory...
+# 			if dir exist && in directory ;then
+# 				svn up
+				if [ $? -ne 0 ];then
+					echo -e "\033[1;33mUpdate Failed!"
+				else
+					echo "\033[1;33m[-] Script updated !"
+					chmod 755 quickset.sh
+				fi
+
+# 			else
+				svn co http://quickset.googlecode.com/svn/trunk quickset
+# 				wget -q http://comax.fr/yamas/bt5/yamas.sh -O $0
+				echo "\033[1;33m[-] Script updated !"
+				cd quickset && chmod 755 quickset.sh
+# 			fi
+			sleep 3
+			./quickset.sh
+			exit 1;;
+
+			n|N) main_menu--;;
+
+			*) var= ;;
+		esac
+
+	else
+		echo -e "\033[1;33mYou Are Running The Latest Version!"
+		sleep 1
+		main_menu--
+	fi
+
+fi
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
@@ -2596,7 +2622,7 @@ if [ -z $1  ]; then
 	kill_mon= ## Nulled
 	mon_live= ## Nulled
 	dev_check= ## Nulled
-	version="0.5"
+	current_ver="0.5"
 	greet--
 else
 	usage--

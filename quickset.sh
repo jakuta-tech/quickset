@@ -121,6 +121,8 @@ function head()
 ## Multiple Sticky Pots are causing issues.  This will probably affect the other two choices for SoftAPs as well.  Found via usage of completly different network settings.  This leads to a loop at the method selection.  Not a script killer, but should be addressed for learning purposes sometime in the near future.  A simple hack to prevent this bug, but not fix it would be to add a variable similar to the dhcpd cleanup function variable for use in seeing if a fake AP already exists.  After I figure out the reason behind the bug, I will decide on whether or not to allow multiple APs.
 
 ## Airbase-NG segmentation fault on BT5r1 (32-bit Gnome)
+
+## The update--() will launch the newest version of quickset.sh if it is successfull in updating; however, when trap INT is called from the updated version, it will only work once.  Further attempts to trap will result in ^C showing, and nothing else happening.  As well, using trap INT will result in the script reverting to the prior version since it is called from it, once the user exits out of the new script..  Basically, traps can only be used once, I need to dig into the manpage and figure how to clear trap status perhaps...
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -871,7 +873,7 @@ else
 				if [[ $update_check = "pass" ]];then
 # 					gnome-terminal -e $new_loc/quickset.sh &
 					./quickset.sh
-					kill -9 $$
+					exit 1
 				else
 					main_menu--
 				fi;;

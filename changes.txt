@@ -1,4 +1,4 @@
-Current Version: 0.7
+Current Version: 0.7.1
 
 Changes:
 #0.3
@@ -21,3 +21,6 @@ Changes:
 
 #0.7
 - Added an Updating Function for the script
+
+#0.7.1
+- Added in functionality that will kill the Parent "quickset.sh" if update is launched and successful.  Prior to this, if a trap INT was called within the child, the user would be reverted back to the parent once exiting out of the child; this could be very confusing and took away the "beauty" of this script.  It's also something that I have not seen with any script which relaunches itself after updating....

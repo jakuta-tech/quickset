@@ -1,9 +1,9 @@
 #!/bin/bash
-function head()
+function script_info()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 0.7
+## Version: 0.7.1
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -121,8 +121,6 @@ function head()
 ## Multiple Sticky Pots are causing issues.  This will probably affect the other two choices for SoftAPs as well.  Found via usage of completly different network settings.  This leads to a loop at the method selection.  Not a script killer, but should be addressed for learning purposes sometime in the near future.  A simple hack to prevent this bug, but not fix it would be to add a variable similar to the dhcpd cleanup function variable for use in seeing if a fake AP already exists.  After I figure out the reason behind the bug, I will decide on whether or not to allow multiple APs.
 
 ## Airbase-NG segmentation fault on BT5r1 (32-bit Gnome)
-
-## The update--() will launch the newest version of quickset.sh if it is successfull in updating; however, when trap INT is called from the updated version, it will only work once.  Further attempts to trap will result in ^C showing, and nothing else happening.  As well, using trap INT will result in the script reverting to the prior version since it is called from it, once the user exits out of the new script..  Basically, traps can only be used once, I need to dig into the manpage and figure how to clear trap status perhaps...
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -135,7 +133,7 @@ function head()
 ## Grant Pearson for having me RTFM with xterm debugging
 
 ## comaX for showing me how much easier it is to follow conditional statements if blank spaces are added in.  This comes in really handy with editors like Kate with folding markers shown.
-## Credit for mass_arp--(), and update--()
+## Credit for the variable parser within mass_arp--() and the majority of the brainpower behind update--()
 
 ## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -170,7 +168,7 @@ echo -e "\033[1;32m\n-----------------------------------------------------------
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read init_var
 case $init_var in
-	1) mon_live=x
+	1) mon_live=yes
 	echo -e "\033[36m\nDefine NIC"
 	read pre_pii
 	dev_check_var=$pre_pii
@@ -182,7 +180,7 @@ case $init_var in
 		init_setup--
 	fi;;
 
-	2) if [[ $mon_live != x ]]; then
+	2) if [[ $mon_live != "yes" ]]; then
 		echo -e "\033[31mYOU MUST DEFINE THE WIRELESS NIC FIRST"
 		read
 		init_setup--
@@ -213,7 +211,7 @@ case $init_var in
 		init_setup--
 	fi;;
 
-	5) kill_mon=x
+	5) kill_mon=kill
 	monitormode--
 	init_setup--;;
 
@@ -237,7 +235,7 @@ clear
 echo -e "\033[1;33m"
 ifconfig -a | grep wlan | awk '{ print $1"   "$5 }'; ifconfig -a | grep mon | awk '{ print $1"    "$5 }'
 sleep 1
-if [[ $kill_mon = x ]];then
+if [[ $kill_mon = "kill" ]];then
 echo -e "\033[31m\n
                               ***WARNING***\033[32m
        Do not attempt to directly disable Monitor Mode on a Physical Device
@@ -249,7 +247,7 @@ echo -e "\033[31m\n
 		read KM
 		dev_check_var=$KM
 		dev_check--
-		if [[ $dev_check = x ]];then
+		if [[ $dev_check = "fail" ]];then
 			KM= ## Nulled
 		fi
 
@@ -264,7 +262,7 @@ echo -e "\033[31m\n
 				read KM_II
 				dev_check_var=$KM_II
 				dev_check--
-				if [[ $dev_check = x ]];then
+				if [[ $dev_check = "fail" ]];then
 					KM_II= ## Nulled
 				fi
 
@@ -292,7 +290,7 @@ else
 		read var
 		dev_check_var=$var
 		dev_check--
-		if [[ $dev_check = x ]];then
+		if [[ $dev_check = "fail" ]];then
 			var= ## Nulled
 		fi
 
@@ -333,7 +331,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 		read mac_dev
 		dev_check_var=$mac_dev
 		dev_check--
-		if [[ $dev_check = x ]];then
+		if [[ $dev_check = "fail" ]];then
 			mac_dev=
 		fi
 
@@ -372,7 +370,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 				read mac_devII
 				dev_check_var=$mac_devII
 				dev_check--
-				if [[ $dev_check = x ]];then
+				if [[ $dev_check = "fail" ]];then
 					mac_devII= ## Nulled
 				fi
 
@@ -413,7 +411,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 				read mac_devII
 				dev_check_var=$mac_devII
 				dev_check--
-				if [[ $dev_check = x ]];then
+				if [[ $dev_check = "fail" ]];then
 					mac_devII= ## Nulled
 				fi
 
@@ -526,10 +524,24 @@ echo $dev | grep -wi $dev_check_var > /dev/null
 if [ $? -ne 0 ];then
 	echo -e "\033[31mDevice does NOT exist"
 	sleep .7
-	dev_check=x
+	dev_check=fail
 else
 	dev_check=
 fi
+}
+
+trap--()
+{
+echo -e "\033[31m\nPlease Exit Out of The Script Properly"
+sleep 2
+main_menu--
+}
+
+trap_101--()
+{
+echo -e "\033[31m\nPlease Exit Out of The Script Properly"
+sleep 2
+cleanup_101--
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
@@ -545,7 +557,7 @@ echo -e "\033[1;34m\n\n\n\n\n\n\n
 QuickSet - A Quick Way to Setup a Wired/Wireless Hack
       Author: Snafu ----> will@configitnow.com
            Read Comments Prior to Usage
-           Version 0.7 (16 October 2011)\033[1;33m
+           Version \033[1;33m$current_ver\033[1;34m (16 October 2011)\033[1;33m
 
 
         IP Forwarding via the Kernel Enabled
@@ -566,11 +578,15 @@ echo -e "\033[1;32m\nUsage: ./quickset.sh"
 main_menu--()
 {
 # scan_var= ## Variable for determining where Wireless Channel Recon was called from
-trap main_menu-- INT
-clear
-echo -e "\033[1;34m
+if [[ $trap_check = "on" ]];then
+	exit 0
+else
+	trap trap-- INT
+	clear
+	echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-     --Main Menu--
+	QuickSet (\033[1;33m$current_ver\033[1;34m)
+	--Main Menu--
 Make Your Selection Below
 ~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
 1) Setup Menu
@@ -587,27 +603,29 @@ Make Your Selection Below
 
 7) Exit Script\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-read var
-case $var in
-	1) setups--;;
+	read var
+	case $var in
+		1) setups--;;
 
-	2) scan_var=main 
-	sc=1-11 ## Channels to scan on
-	hop=1500 ## time between channel hops
-	scan--;;
+		2) scan_var=main 
+		sc=1-11 ## Channels to scan on
+		hop=1500 ## time between channel hops
+		scan--;;
 
-	3) wifi_101--;;
+		3) wifi_101--;;
 
-	4) atk_menu--;;
+		4) atk_menu--;;
 
-	5) routing--;;
+		5) routing--;;
 
-	6) update--;;
+		6) update--;;
 
-	7) cleanup--;;
+		7) cleanup--;;
 
-	*) main_menu--;;
-esac
+		*) main_menu--;;
+	esac
+
+fi
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
@@ -794,13 +812,13 @@ case $rte_choice in
 		read
 		routing--
 	else
-		private=x
+		private=yes
 		ap_pre_var--
 		ap_setup--
 	fi;;
 
 	5) dhcp_pre_var--
-	if [[ $ap_check != x ]]; then
+	if [[ $ap_check != "on" ]]; then
 		ap_pre_var--
 	fi
 
@@ -814,15 +832,18 @@ esac
 
 cleanup--()
 {
+# if [[ $foo = x ]];then
+# 	exit
+# else
 echo -e "\033[36m\nPerform Cleanup of Hidden Processes? (y or n)"
 read var
 case $var in
-	y|Y) if [[ $dhcp_svr_stat = x ]]; then
+	y|Y) if [[ $dhcp_svr_stat = "active" ]]; then
 		killall dhcpd3
 	fi;;
 esac
-
 exit
+# fi
 }
 
 update--()
@@ -852,7 +873,6 @@ else
 						cd quickset && chmod 755 quickset.sh
 						echo -e "\033[1;33m[-] Script updated and now located in $PWD"
 						sleep 2
-# 						new_loc=$PWD
 						update_check=pass
 					fi
 
@@ -864,16 +884,14 @@ else
 					else
 						chmod 755 quickset.sh
 						echo -e "\033[1;33m[-] Script updated!"
-# 						new_loc=$PWD
 						update_check=pass
 					fi
 
 				fi
 
 				if [[ $update_check = "pass" ]];then
-# 					gnome-terminal -e $new_loc/quickset.sh &
+					trap_check=on
 					./quickset.sh
-					exit 1
 				else
 					main_menu--
 				fi;;
@@ -1132,10 +1150,10 @@ ferret--()
 		read var
 		case $var in
 			1) fer_type=Wireless
-			wifi_check=x;;
+			wifi_check=wireless;;
 
 			2) fer_type=Wired
-			wifi_check=y;;
+			wifi_check=wired;;
 
 			*) var= ;;
 		esac
@@ -1152,7 +1170,7 @@ ferret--()
 			ferret_II--
 		else
 			case $wifi_check in
-				x)fer_chan= ## Nulled
+				wireless)fer_chan= ## Nulled
 				while [ -z $fer_chan ];do
 					echo -e "\033[36m\nWireless Channel to Sniff? (1-11)"
 					read fer_chan
@@ -1165,7 +1183,7 @@ ferret--()
 				xterm -bg black -fg grey -sb -rightbar -title Ferret -e ferret -i $fer_dev --channel $fer_chan & 
 				atk_menu--;;
 
-				y) xterm -bg black -fg grey -sb -rightbar -title Ferret -e ferret -i $fer_dev & 
+				wired) xterm -bg black -fg grey -sb -rightbar -title Ferret -e ferret -i $fer_dev & 
 				atk_menu--;;
 			esac
 
@@ -1183,7 +1201,7 @@ else
 fi
 
 fer_type=Wireless
-wifi_check=x
+wifi_check=wireless
 ferret_II--
 }
 
@@ -1325,7 +1343,7 @@ arpspoof--()
 
 	mass_arp--()
 	{
-	if [[ $arp_way = x ]];then
+	if [[ $arp_way = "yes" ]];then
 		while [ "$1" != "" ];do
 			xterm -bg black -fg grey -hold -title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
 			xterm -bg black -fg grey -hold -title "ARP to $gt_way (GW) as $1" -e arpspoof -i $spoof_dev -t $gt_way $1 &
@@ -1354,7 +1372,7 @@ while [ -z $spoof_dev ];do
 	read spoof_dev
 	dev_check_var=$spoof_dev
 	dev_check--
-	if [[ $dev_check = x ]];then
+	if [[ $dev_check = "fail" ]];then
 		spoof_dev= ## Nulled
 	fi
 
@@ -1389,7 +1407,7 @@ while [[ $var_II != x ]];do
 			echo -e "\033[36m\nTwo Way Spoof? (y or n)"
 			read var_IV
 			case $var_IV in
-				y|Y) arp_way=x 
+				y|Y) arp_way=yes 
 				mass_arp-- $mult_tgts
 				atk_menu--;;
 
@@ -1613,7 +1631,7 @@ i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
 	echo -e "\033[1;33m"
 # 	xterm -bg black -fg grey -sb -rightbar -hold -title "DHCP Server" -e dhcpd3 -cf $DHCPDCONF $dhcp_dev &
 	dhcpd3 -cf $DHCPDCONF $dhcp_dev &
-	dhcp_svr_stat=x
+	dhcp_svr_stat=active
 	if [ $? -ne 0 ];then
 		echo -e "\033[31mThe DHCP server could not be started\nPress Enter to Return to Routing Features"
 		read
@@ -1673,7 +1691,7 @@ sasm=255.255.255.0 ## SoftAP Subnet Mask
 sac=6 ## SoftAP Channel
 mtu_size=1500 ## MTU Size
 dhcp_autol=Yes ## DHCP Autolaunch for speed and intensity purposes
-ap_check=x ## Variable to make sure these pre-variables are called if DHCP server is done prior to SoftAP
+ap_check=on ## Variable to make sure these pre-variables are called if DHCP server is done prior to SoftAP
 }
 
 ap_setup--()
@@ -1775,7 +1793,7 @@ case $var in
 	*) ap_setup--;;
 esac
 
-if [[ $private = x ]]; then
+if [[ $private = "yes" ]]; then
 	BB=3
 	ap--
 else
@@ -1911,7 +1929,7 @@ esac
 ##~~~~~~~~~~~~~~~~~~~~~~~~ BEGINNING OF wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 wifi_101--()
 {
-trap cleanup_101-- INT
+trap trap_101-- INT
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Repitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 	tchan--()
@@ -2607,10 +2625,9 @@ Client Technique Selection
 	}
 ##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##
 
-## wifi_101-- trap catcher
 	cleanup_101--()
 	{
-	echo -e "\033[36m\nKill WiFi_101 Processess Before Returning to the Main Menu? (y or n)"
+	echo -e "\033[36m\nKill WiFi_101 Processess Before Returning to Main Menu? (y or n)"
 	read kill_wifi
 	case $kill_wifi in
 		y|Y) echo -e "\033[1;33m"
@@ -2641,10 +2658,11 @@ if [ -z $1  ]; then
 	IE= ## Internet Connected NIC
 	pre_pii= ##
 	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
-	kill_mon= ## Nulled
+	kill_mon= ## Variable to determine if the "killing a monitor mode option" has been selected
 	mon_live= ## Nulled
 	dev_check= ## Nulled
-	current_ver="0.7"
+	current_ver="0.7.1"
+	trap_check= ## Variable for exiting out of the Parent script if the update feature is launched
 	greet--
 else
 	usage--

@@ -585,8 +585,8 @@ else
 	clear
 	echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-	QuickSet (\033[1;33m$current_ver\033[1;34m)
-	--Main Menu--
+    QuickSet (\033[1;33m$current_ver\033[1;34m)
+     --Main Menu--
 Make Your Selection Below
 ~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
 1) Setup Menu

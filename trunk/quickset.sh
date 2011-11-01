@@ -140,7 +140,13 @@ function script_info()
 read
 }
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Repitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Repitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
+usage--()
+{
+clear
+echo -e "\033[1;32m\nUsage: ./quickset.sh"
+}
+
 init_setup--()
 {
 clear
@@ -543,10 +549,9 @@ echo -e "\033[31m\nPlease Exit Out of The Script Properly"
 sleep 2
 cleanup_101--
 }
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~ END Repitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Starting Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Starting Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
 greet--()
 {
 echo "1" > /proc/sys/net/ipv4/ip_forward
@@ -557,7 +562,7 @@ echo -e "\033[1;34m\n\n\n\n\n\n\n
 QuickSet - A Quick Way to Setup a Wired/Wireless Hack
       Author: Snafu ----> will@configitnow.com
            Read Comments Prior to Usage
-           Version \033[1;33m$current_ver\033[1;34m (16 October 2011)\033[1;33m
+          Version \033[1;33m$current_ver\033[1;34m (1 November 2011)\033[1;33m
 
 
         IP Forwarding via the Kernel Enabled
@@ -569,11 +574,7 @@ ap_check= ## Nulled
 init_setup--
 }
 
-usage--()
-{
-clear
-echo -e "\033[1;32m\nUsage: ./quickset.sh"
-}
+
 
 main_menu--()
 {
@@ -627,9 +628,9 @@ Make Your Selection Below
 
 fi
 }
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~~ END Starting Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~ main_menu-- functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~ BEGIN main_menu-- functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
 setups--()
 {
 clear
@@ -832,9 +833,6 @@ esac
 
 cleanup--()
 {
-# if [[ $foo = x ]];then
-# 	exit
-# else
 echo -e "\033[36m\nPerform Cleanup of Hidden Processes? (y or n)"
 read var
 case $var in
@@ -843,7 +841,6 @@ case $var in
 	fi;;
 esac
 exit
-# fi
 }
 
 update--()
@@ -911,9 +908,9 @@ else
 
 fi
 }
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~ END main_menu-- functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~ setups-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~ BEGIN setups-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~##
 ipt_--()
 {
 ## The basic premise behind this function is to have a basic overview and flush capability for iptables.
@@ -969,9 +966,9 @@ case $var in
 	*) naming--;;
 esac
 }
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~ END setups-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ scan-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~ BEGIN scan-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
 rescan--()
 {
 echo -e "\033[36m\nWould you like to DeAuth to reveal hidden ESSIDS? (y or n)"
@@ -1101,9 +1098,9 @@ sleep .7
 deauth_II--
 clear
 }
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~ END scan-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~ atk_menu-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~ BEGIN atk_menu-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~##
 ferret--()
 {
 ## fer_dev= Device to be sniffed
@@ -1448,9 +1445,9 @@ while [[ $var_II != x ]];do
 
 done
 }
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~ END atk_menu-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~ routing-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~ BEGIN routing-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~##
 k_for--()
 {
 clear
@@ -1683,7 +1680,7 @@ fi
 }
 ##-----------------------------------------------------------------------------##
 
-##~~~~~~~~~~~~~~~~~~~~~~~ routing-- shared sub-functions ~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~ BEGIN routing-- shared sub-functions ~~~~~~~~~~~~~~~~~~##
 ap_pre_var--()
 {
 sapip=192.168.10.1 ## SoftAP IP Address
@@ -1863,12 +1860,12 @@ else
 	routing--
 fi
 }
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~ END routing-- shared sub-functions ~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~ END routing-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~ in-depth sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~ ipt_-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~ BEGIN in-depth sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~ BEGIN ipt_-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ipt_flush--()
 {
 clear
@@ -1922,16 +1919,15 @@ case $var in
 	*) ipt_flush--;;
 esac
 }
-##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##
-##~~~~~~~~~~~~~~~~~~~~~~ END OF in-depth sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~ END ipt_-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~ END in-depth sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
-
-##~~~~~~~~~~~~~~~~~~~~~~~~ BEGINNING OF wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 wifi_101--()
 {
 trap trap_101-- INT
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Repitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~ BEGIN wifi_101-- Repitious Functions ~~~~~~~~~~~~~~~~~~~~~##
 	tchan--()
 	{
 	tc= ## tgt channel
@@ -2077,9 +2073,9 @@ YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG XTERM SESSION
 		*) auth--;;
 	esac
 	}
-##-----------------------------------------------------------------------------##
+##~~~~~~~~~~~~~~~~~~~~ END wifi_101-- Repitious Functions ~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~~~~~ Starting WIFI_101-- Function ~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~ BEGIN Starting wifi_101-- Function ~~~~~~~~~~~~~~~~~~~~~##
 	venue--()
 	{
 	clear
@@ -2115,9 +2111,9 @@ YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG XTERM SESSION
 		*) venue--;;
 	esac
 	}
-##-----------------------------------------------------------------------------##
+##~~~~~~~~~~~~~~~~~~~~~ END Starting wifi_101-- Function ~~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ venue-- functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~ BEGIN wifi_101-- venue-- functions ~~~~~~~~~~~~~~~~~~~~~~##
 	rtech--()
 	{
 	#rt= ## Router Technique
@@ -2224,9 +2220,9 @@ Client Technique Selection
 
 	WPA_II--
 	}
-##-----------------------------------------------------------------------------##
+##~~~~~~~~~~~~~~~~~~~~ END wifi_101-- venue-- functions ~~~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~ rtech-- & ctech-- shared sub-functions ~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~ BEGIN wifi_101-- rtech-- & ctech-- shared sub-functions ~~~~~~~~~~##
 	crack--()
 	{
 	aircrack-ng -a 1 -b $b $cf-*.cap
@@ -2234,9 +2230,9 @@ Client Technique Selection
 	read
 	main_menu--
 	}
-##-----------------------------------------------------------------------------##
+##~~~~~~~~~~~ END wifi_101-- rtech-- & ctech-- shared sub-functions ~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~ rtech-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~ BEGIN wifi_101-- rtech-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~##
 	rtech_II--()
 	{
 	clear
@@ -2522,9 +2518,9 @@ Client Technique Selection
 		*) amplify--;;
 	esac
 	}
-##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##
+##~~~~~~~~~~~~~~~~ END wifi_101-- rtech-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~ ctech-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~ BEGIN wifi_101-- ctech-- sub-functions ~~~~~~~~~~~~~~~~~~~~~##
 	ctech_II--()
 	{
 	#b= ## tgt bssid
@@ -2587,9 +2583,9 @@ Client Technique Selection
 	st_3--
 	crack--
 	}
-##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##
+##~~~~~~~~~~~~~~~~~ END wifi_101-- ctech-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~ WPA-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~ BEGIN wifi_101-- WPA-- sub-functions ~~~~~~~~~~~~~~~~~~~##
 	WPA_II--()
 	{
 # 	tc= ## Target Channel for WiFi Attacks
@@ -2623,7 +2619,7 @@ Client Technique Selection
 	kill -9 $wpa_pid &
 	main_menu--
 	}
-##^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##
+##~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- WPA-- sub-functions ~~~~~~~~~~~~~~~~~~~~##
 
 	cleanup_101--()
 	{
@@ -2646,9 +2642,9 @@ Client Technique Selection
 ## wifi_101-- Launcher
 venue--
 }
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~ END OF wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 if [ "$UID" -ne 0 ];then
 	echo -e "\033[31mMust be ROOT to run this script"
 	exit 87
@@ -2667,4 +2663,4 @@ if [ -z $1  ]; then
 else
 	usage--
 fi
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~ END Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##

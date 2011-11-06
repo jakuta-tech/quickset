@@ -1,4 +1,4 @@
-Current Version: 0.7.1
+Current Version: 0.9
 
 Changes:
 #0.3
@@ -24,3 +24,11 @@ Changes:
 
 #0.7.1
 - Added in functionality that will kill the Parent "quickset.sh" if update is launched and successful.  Prior to this, if a trap INT was called within the child, the user would be reverted back to the parent once exiting out of the child; this could be very confusing and took away the "beauty" of this script.  It's also something that I have not seen with any script which relaunches itself after updating....
+
+#0.9
+- All varibles that were used for "String" comparasions have been sanitized with double quotations
+- The previous "amplification techniques" function has been removed in favor of:
+  1) My idea on "Amplification" was incorrect.  Thank you for pointing out the defencies ShadowMaster.
+  2) A completly restructured wifi_101--(), which enables the user to perform each step in the WEP crack process one by one; while still retaining the "Automated" features that previous versions contained.
+- Some functions were combined when I realized that they did the same thing in a slightly different manner.
+- An option has been added in both the Authentication function and the Packetforge-NG functions of the script that will allow the user to do SKA injection.

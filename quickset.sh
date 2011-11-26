@@ -182,7 +182,9 @@ echo -e "\033[1;32m\n-----------------------------------------------------------
 
 7) List Available NICs
 
-8) Proceed\033[1;34m
+8) Proceed
+
+E)xit Script\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read init_var
 case $init_var in
@@ -239,6 +241,8 @@ case $init_var in
 	init_setup--;;
 
 	8) main_menu--;;
+
+	e|E) exit 0;;
 
 	*) init_setup--;;
 esac

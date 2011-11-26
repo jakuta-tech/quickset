@@ -42,3 +42,4 @@ Changes:
 - Added directory location in titlebar for dhcpdtail
 - began debugging with an actual router, fixing massive problems.........
 - removed Wireless Channel Recon option in favor of consolidated wifi options under wifi_101--()
+- Added exit option within init_setup--()

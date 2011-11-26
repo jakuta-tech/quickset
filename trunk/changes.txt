@@ -1,4 +1,4 @@
-Current Version: 0.9
+Current Version: 1.3
 
 Changes:
 #0.3
@@ -32,3 +32,13 @@ Changes:
   2) A completly restructured wifi_101--(), which enables the user to perform each step in the WEP crack process one by one; while still retaining the "Automated" features that previous versions contained.
 - Some functions were combined when I realized that they did the same thing in a slightly different manner.
 - An option has been added in both the Authentication function and the Packetforge-NG functions of the script that will allow the user to do SKA injection.
+
+#1.3
+- Fixed the bug for wifi_auth--() pointing to auth--()
+- Fixed a bug with regards to ifconfig -s for dev_check--()
+- Added xterm option for chop & frag
+- Adjusted dhcpd with 1hr lease and 2hr max
+- Added color to main menu to allure to the fact that 2) shouldnt be entered in
+- Added directory location in titlebar for dhcpdtail
+- began debugging with an actual router, fixing massive problems.........
+- removed Wireless Channel Recon option in favor of consolidated wifi options under wifi_101--()

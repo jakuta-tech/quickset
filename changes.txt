@@ -1,4 +1,4 @@
-Current Version: 1.5
+Current Version: 1.7
 
 Changes:
 #0.3
@@ -50,3 +50,12 @@ Changes:
 - Automated WEP attacks menu removed, read comments for full explanation
 - Seems to be fully debugged for the wifi_101--() portion of quickset.sh
 - Still waiting on a fix for airbase-ng to prevent the segmentation fault, hence the odd versioning sequences
+
+#1.7
+- Moved iptables functions to routing menu
+- Added in sleeps to allow user to read and comprehend the tables versus the old way of having them scrollback to read
+- Added proper coloring for iptable-save outputs
+- Went through and symetricized menu options
+- Adjusted sleep timings on some menu options
+- Added returns within functions to breakout of "Enable || Kill" Monitor Mode options so that if the user inadvertently picks those options, they are $
+- Small changes to variable naming for speed purposes

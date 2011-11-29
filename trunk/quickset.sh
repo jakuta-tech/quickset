@@ -3,7 +3,7 @@ function script_info()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 1.5
+## Version: 1.7
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -147,6 +147,7 @@ echo -e "\033[1;32m\nUsage: ./quickset.sh"
 
 init_setup--()
 {
+kill_mon= ## Nulled
 clear
 echo -e "\033[1;32m\n--------------------------------------------------------------------------------------
          Only Certain Modes in this Script Require Both Devices to be Defined
@@ -219,7 +220,6 @@ monitormode--()
 {
 var= ## Nulled
 KM= ## Device to kill
-KM_II= ## Physical device to kill
 clear
 echo -e "\033[1;33m"
 ifconfig -a | grep wlan | awk '{ print $1"   "$5 }'; ifconfig -a | grep mon | awk '{ print $1"    "$5 }'
@@ -237,37 +237,25 @@ if [[ $kill_mon == "kill" ]];then
 		dev_check_var=$KM
 		dev_check--
 		if [[ $dev_check == "fail" ]];then
-			KM= ## Nulled
+			return
 		fi
 
 	done
 
 	while [ -z $var ];do
-		echo -e "\033[36m\nIs \033[1;33m$KM\033[36m associated with a Physical Device? (y or n)"
+		echo -e "\033[36m\nWhat Physical Device is \033[1;33m$KM\033[36m Associated With?"
 		read var
-		case $var in
-			y|Y) while [ -z $KM_II ];do 
-				echo -e "\033[36m\nPhysical Device Name?"
-				read KM_II
-				dev_check_var=$KM_II
-				dev_check--
-				if [[ $dev_check == "fail" ]];then
-					KM_II= ## Nulled
-				fi
-
-			done
-
-			echo -e "\033[1;33m"
-			airmon-ng stop $KM_II && airmon-ng stop $KM ;;
-
-			n|N) echo -e "\033[1;33m" 
-			airmon-ng stop $KM ;;
-
-			*) var= ;; ## Nulled
-		esac
+		dev_check_var=$var
+		dev_check--
+		if [[ $dev_check == "fail" ]];then
+			var= ## Nulled
+		fi
 
 	done
 
+	echo -e "\033[1;33m"
+	airmon-ng stop $KM && airmon-ng stop $var
+	pii= ## Nulled
 	echo -e "\n\n\033[1;32mPress Enter to Continue"
 	read
 else
@@ -278,7 +266,7 @@ else
 		dev_check_var=$phys_dev
 		dev_check--
 		if [[ $dev_check == "fail" ]];then
-			phys_dev= ## Nulled
+			return
 		fi
 	done
 
@@ -556,7 +544,7 @@ QuickSet - A Quick Way to Setup a Wired/Wireless Hack
       Author: Snafu ----> will@configitnow.com
            Read Comments Prior to Usage
 
-          Version \033[1;33m$current_ver\033[1;34m (26 November 2011)\033[1;34m
+          Version \033[1;33m$current_ver\033[1;34m (28 November 2011)\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 sleep 2
@@ -620,26 +608,22 @@ echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          --Setup Menu--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-1) IPTABLES Configuration
+1) List Available NICs
 
-2) List Available NICs
+2) NIC Names & Monitor Mode Setup
 
-3) NIC Names & Monitor Mode Setup
-
-4) MAC Address Options
+3) MAC Address Options
 
 M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read var
 case $var in
-	1) ipt_--;;
-
-	2) nics--
+	1) nics--
 	setups--;;
 
-	3) naming--;;
+	2) naming--;;
 
-	4) mac_control--;;
+	3) mac_control--;;
 
 	m|M) main_menu--;;
 
@@ -701,23 +685,27 @@ echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
     --Routing Features--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-1) Kernel Forwarding
+1) IPTABLES Configuration
 
-2) Wireless Vaccuum
+2) Kernel Forwarding
 
-3) StickyPot
+3) Wireless Vaccuum
 
-4) WiFi Range Extender
+4) StickyPot
 
-5) DHCP Server
+5) WiFi Range Extender
+
+6) DHCP Server
 
 M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read rte_choice
 case $rte_choice in
-	1) k_for--;;
+	1) ipt_--;;
 
-	2) if  [[ -z $IE || -z $pii ]];then
+	2) k_for--;;
+
+	3) if  [[ -z $IE || -z $pii ]];then
 		echo -e "\033[31mMonitor Mode NIC and Internet Connected NIC MUST be Defined Before Proceeding"
 		sleep 1
 		routing--
@@ -726,7 +714,7 @@ case $rte_choice in
 		ap_setup--
 	fi;;
 
-	3) if  [[ -z $pii ]];then
+	4) if  [[ -z $pii ]];then
 		echo -e "\033[31mMonitor Mode NIC MUST be Defined Before Proceeding"
 		sleep 1
 		routing--
@@ -735,7 +723,7 @@ case $rte_choice in
 		ap_setup--
 	fi;;
 
-	4) if  [[ -z $IE || -z $pii ]];then
+	5) if  [[ -z $IE || -z $pii ]];then
 		echo -e "\033[31mMonitor Mode NIC and Internet Connected NIC MUST be Defined Before Proceeding"
 		sleep 1
 		routing--
@@ -745,7 +733,7 @@ case $rte_choice in
 		ap_setup--
 	fi;;
 
-	5) dhcp_pre_var--
+	6) dhcp_pre_var--
 	if [[ $ap_check != "on" ]]; then
 		ap_pre_var--
 	fi
@@ -776,7 +764,7 @@ clear
 update_ver=$(curl http://quickset.googlecode.com/svn/trunk/changes.txt)
 if [ $? -ne 0 ];then
 	echo -e "\033[1;33mNo Internet Connection!"
-	sleep 1
+	sleep 1.2
 	main_menu--
 else
 	update_ver=$(echo $update_ver | grep -iw "Current Version:" | awk '{print $3}')
@@ -838,39 +826,6 @@ fi
 ##~~~~~~~~~~~~~~~~~~~~~~~~ END main_menu-- functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~ BEGIN setups-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~##
-ipt_--()
-{
-## The basic premise behind this function is to have a basic overview and flush capability for iptables.
-## It is in no way to be an all encompassing tool.
-clear
-echo -e "\033[1;34m
-~~~~~~~~~~~~~~~~~~~~~~~
-IPTABLES Configurations
-~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-(L)ist Tables
-
-(F)lush Tables
-
-(P)revious Menu
-
-(M)ain Menu\033[1;34m
-~~~~~~~~~~~~~~~~~~~~~~~\n"
-read var 
-case $var in
-	l|L) iptables-save | egrep -v "Generated by|COMMIT|Completed on"
-	read
-	ipt_--;;
-
-	f|F) ipt_flush--;;
-
-	p|P) setups--;;
-
-	m|M) main_menu--;;
-
-	*) ipt_--;;
-esac
-}
-
 naming--()
 {
 clear
@@ -1243,6 +1198,42 @@ done
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ END atk_menu-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~ BEGIN routing-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~##
+ipt_--()
+{
+## The basic premise behind this function is to have a basic overview and flush capability for iptables.
+## It is in no way to be an all encompassing tool.
+clear
+echo -e "\033[1;34m
+~~~~~~~~~~~~~~~~~~~~~~~
+IPTABLES Configurations
+~~~~~~~~~~~~~~~~~~~~~~~\033[36m
+1) List Tables
+
+2) Flush Tables
+
+P)revious Menu
+
+M)ain Menu\033[1;34m
+~~~~~~~~~~~~~~~~~~~~~~~\n"
+read var 
+case $var in
+	1) clear
+	echo -e "\033[1;33m"
+	iptables-save | egrep -v "Generated by|COMMIT|Completed on"
+	echo -e "\033[1;32m\nPress Enter to Continue"
+	read
+	ipt_--;;
+
+	2) ipt_flush--;;
+
+	p|P) routing--;;
+
+	m|M) main_menu--;;
+
+	*) ipt_--;;
+esac
+}
+
 k_for--()
 {
 clear
@@ -1593,9 +1584,9 @@ case $var in
 		ap_setup--
 	fi;;
 
-	8) routing--;;
+	p|P) routing--;;
 
-	9) main_menu--;;
+	m|M) main_menu--;;
 
 	*) ap_setup--;;
 esac
@@ -1698,28 +1689,39 @@ P)revious Menu
 M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~\n"
 read var
+clear
 case $var in
 	1) iptables -t filter --flush
+	echo -e "\033[1;33m"
 	iptables-save -t filter | egrep -v "Generated by|COMMIT|Completed on"
+	sleep 2
 	ipt_flush--;;
 
 	2) iptables -t nat --flush
+	echo -e "\033[1;33m"
 	iptables-save -t nat | egrep -v "Generated by|COMMIT|Completed on"
+	sleep 2
 	ipt_flush--;;
 
 	3) iptables -t mangle --flush
+	echo -e "\033[1;33m"
 	iptables-save -t mangle | egrep -v "Generated by|COMMIT|Completed on"
+	sleep 2
 	ipt_flush--;;
 
 	4) iptables -t raw --flush
+	echo -e "\033[1;33m"
 	iptables-save -t raw | egrep -v "Generated by|COMMIT|Completed on"
+	sleep 2
 	ipt_flush--;;
 
 	5) iptables -t filter --flush
 	iptables -t nat --flush
 	iptables -t mangle --flush
 	iptables -t raw --flush
+	echo -e "\033[1;33m"
 	iptables-save | egrep -v "Generated by|COMMIT|Completed on"
+	sleep 3
 	ipt_flush--;;
 
 	p|P) ipt_--;;
@@ -1858,7 +1860,7 @@ YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG XTERM SESSION
 
 L)ist the Steps needed to Crack WEP
 
-R)eturn to Main Menu\033[1;34m
+M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
@@ -1904,7 +1906,7 @@ R)eturn to Main Menu\033[1;34m
 
 		l|L) lists--;;
 
-		r|R) main_menu--;;
+		m|M) main_menu--;;
 
 		*) venue--;;
 	esac
@@ -2921,7 +2923,7 @@ if [ -z $1  ]; then
 	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
 	kill_mon= ## Variable to determine if the "killing a monitor mode option" has been selected
 	dev_check= ## Nulled
-	current_ver=1.5
+	current_ver=1.7
 	trap_check= ## Variable for exiting out of the Parent script if the update feature is launched
 	greet--
 else

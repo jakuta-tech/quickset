@@ -3,7 +3,7 @@ function script_info()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 1.7
+## Version: 2.0
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -38,7 +38,6 @@ function script_info()
 ## Colorsets ##
 ## echo -e "\033[1;32m = Instructions
 ## echo -e "\033[1;33m = Outputs
-## echo -e "\033[34m   = WTFs
 ## echo -e "\033[1;34m = Headers
 ## echo -e "\033[36m   = Inputs
 ## echo -e "\033[31m   = Warnings / Infinite Loops
@@ -88,8 +87,6 @@ function script_info()
 
 ## $var is a recycled variable throughout the script.  $parent is a variable declaring where a function is called from.
 
-## On 21 September, I matched the MTUs for the routing portions; this FINALLY made it to where the iPhone could connect....!  Part of the problem had been that I was trying to go with a rather high MTU 1800.....This is not recommended as the default for a LAN is 1500, I believe that the fragmentation resulting from the 1800 caused the failures.
-
 ## One of the tougher parts of designing this script was weighing in on which programs to include, originally I had decided to implement a KarMetasploit attack.  I later decided against it; instead deciding to focus on smaller programs; with the thought concept that this script is not meant to be an all encompassing tool, but one designed to setup "Quick Fixes".....
 
 ## For Functions within Functions (sub-functions), I have found that I like to declare my variables for use within a function at the beginning of the function, then I list my sub-functions, at the end of the sub-functions you will find the parent functions commands.  It may be a strange way to do it, but it works for my readability purposes.
@@ -100,6 +97,10 @@ function script_info()
 ## As of version 1.5, the option for Automatic WEP attacks has been removed.  I wanted to keep it in, but there are so many variables with respect towards WEP cracking that until a GUI option for quickset exists, it will not be feasible to have this option.
 
 ## init_setup--() has been clarified.  The old menu was very confusing with regards to creating variables for NIC names, enabling monitor mode, etc...  The new menu is a lot more "user" friendly 
+
+## On 21 September, I matched the MTUs for the routing portions; this FINALLY made it to where the iPhone could connect....!
+## Part of the problem had been that I was trying to go with a rather high MTU 1800.....This is not recommended as the default for a LAN is 1500, I believe that the fragmentation resulting from the 1800 caused the failures.
+## After further study into the matter it seems that matching of MTUs is not to be recommended; The only MTU that needs to be changed is at0.  at0 should be set to 1400 for the MTU value.
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -132,6 +133,8 @@ function script_info()
 
 ## ShadowMaster for showing me the error of my ways with what I thought was "ARP Amplification".
 ## Due to his thoughts on the matter, I have completly rewritten the wifi_101--() portion of this script.
+
+## melissabubble for informing me about the "The Wireless Vaccuum" and "WiFi Range Extender" not working properly.  After careful study of the functions I came to the conclusion listed under the "Development Notes" up top.
 
 ## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -231,7 +234,6 @@ if [[ $kill_mon == "kill" ]];then
         The script will ask for the associated Physical Device when ready\033[31m
                               ***WARNING***"
 	sleep 1
-	while [ -z $KM ];do
 		echo -e "\033[36m\nMonitor Mode Device to Kill?"
 		read KM
 		dev_check_var=$KM
@@ -240,7 +242,9 @@ if [[ $kill_mon == "kill" ]];then
 			return
 		fi
 
-	done
+		if [[ -z $KM ]];then
+			return
+		fi
 
 	while [ -z $var ];do
 		echo -e "\033[36m\nWhat Physical Device is \033[1;33m$KM\033[36m Associated With?"
@@ -259,16 +263,17 @@ if [[ $kill_mon == "kill" ]];then
 	echo -e "\n\n\033[1;32mPress Enter to Continue"
 	read
 else
-	phys_dev= ## Nulled
-	while [ -z $phys_dev ];do
 		echo -e "\033[36m\nPhysical Device to Enable Monitor Mode on?"
 		read phys_dev
+		if [[ -z $phys_dev ]];then
+			return
+		fi
+
 		dev_check_var=$phys_dev
 		dev_check--
 		if [[ $dev_check == "fail" ]];then
 			return
 		fi
-	done
 
 	echo -e "\033[1;33m"
 	airmon-ng start $phys_dev
@@ -541,13 +546,13 @@ echo -e "\033[1;34m\n\n\n\n\n\n\n
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 QuickSet - A Quick Way to Setup a Wired/Wireless Hack
-      Author: Snafu ----> will@configitnow.com
-           Read Comments Prior to Usage
+      Author: Snafu ----> \033[1;33mwill@configitnow.com\033[1;32m
+           Read Comments Prior to Usage\033[1;34m
 
-          Version \033[1;33m$current_ver\033[1;34m (28 November 2011)\033[1;34m
+          Version \033[1;33m$current_ver\033[1;34m (\033[1;33m$rel_date\033[1;34m)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-sleep 2
+sleep 3
 ap_check= ## Nulled
 init_setup--
 }
@@ -864,11 +869,11 @@ ferret--()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
            --Ferret Parameters--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-1) List Available NICs
+1) Device to Sniff  [\033[1;33m$fer_dev\033[36m]
 
-2) Device to Sniff  [\033[1;33m$fer_dev\033[36m]
+2) Type of Device   [\033[1;33m$fer_type\033[36m]
 
-3) Type of Device   [\033[1;33m$fer_type\033[36m]
+3) List Available NICs
 
 4) Proceed
 
@@ -878,10 +883,7 @@ M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
-		1) nics--
-		ferret_II--;;
-
-		2) echo -e "\033[36m\nDevice?"
+		1) echo -e "\033[36m\nDevice?"
 		read fer_dev
 		dev_check_var=$fer_dev
 		dev_check--
@@ -892,7 +894,7 @@ M)ain Menu\033[1;34m
 			ferret_II--
 		fi;;
 
-		3) echo -e "\033[36m\n1) Wireless\n2) Wired"
+		2) echo -e "\033[36m\n1) Wireless\n2) Wired"
 		read var
 		case $var in
 			1) fer_type="Wireless"
@@ -904,6 +906,9 @@ M)ain Menu\033[1;34m
 			*) var= ;; ## Nulled
 		esac
 
+		ferret_II--;;
+
+		3) nics--
 		ferret_II--;;
 
 		4) if [[ -z $fer_dev || -z $wifi_check ]];then
@@ -1297,9 +1302,7 @@ DHCPDCONF="/tmp/dhcpd.conf" ## Used by dhcpd3
 	clear
 	echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-              --DHCP Server Parameters--\033[31m
-
-DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE GATEWAY IP ADDRESS\033[1;34m
+              --DHCP Server Parameters--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
 1) DHCP Server Device  [\033[1;33m$dhcp_dev\033[36m]
 
@@ -1430,11 +1433,7 @@ i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
 		route add -net $sas netmask $sasm gw $sapip
 		iptables -P FORWARD ACCEPT
 		case $rte_choice in
-			2) iptables -t nat -A POSTROUTING -o $IE -j MASQUERADE
-			#set Blackhole Routing to bypass cached DNS entries
-			iptables -t nat -A PREROUTING -i at0 -j REDIRECT;;
-
-			4) iptables -t nat -A POSTROUTING -o $IE -j MASQUERADE;;
+			3|5) iptables -t nat -A POSTROUTING -o $IE -j MASQUERADE;;
 		esac
 
 		case $dhcp_tail in
@@ -1479,7 +1478,7 @@ ap_pre_var--()
 sapip="192.168.10.1" ## SoftAP IP Address
 sasm="255.255.255.0" ## SoftAP Subnet Mask
 sac=6 ## SoftAP Channel
-mtu_size=1500 ## MTU Size
+mtu_size=1400 ## MTU Size
 dhcp_autol="Yes" ## DHCP Autolaunch for speed and intensity purposes
 ap_check="on" ## Variable to make sure these pre-variables are called if DHCP server is done prior to SoftAP
 }
@@ -1512,11 +1511,9 @@ ap_setup--()
 clear
 echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        --Soft AP Parameters--\033[31m
-
-        DO NOT USE [\033[1;33m`route -n | awk '/UG/ { print $2 }'`\033[31m] FOR THE SOFTAP IP ADDRESS\033[1;34m
+                        --Soft AP Parameters--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-1) SoftAP Physical Device [\033[1;33m$phys_dev\033[36m] (Not The Monitor Mode Device Name)
+1) SoftAP Physical Device [\033[1;33m$phys_dev\033[36m] \033[31m(Not The Monitor Mode Device Name)\033[36m
 
 2) SoftAP IP Address      [\033[1;33m$sapip\033[36m]
 
@@ -1634,7 +1631,7 @@ elif [ $BB == "3" ];then
 	done
 
 	case $var in
-		y|Y) echo -e "\033[36m\nPassword?"
+		y|Y) echo -e "\033[36m\nPassword? (a-f, 0-9) [10 Characters]"
 		read wep_pword
 		xterm -bg black -fg grey -sb -rightbar -title "Wifi Extender AP" -e airbase-ng -c $sac -e "$SSID" -w $wep_pword $pii &
 		clear;;
@@ -1649,11 +1646,10 @@ fi
 # Intended to prevent errors on Virtual Machines with USB cards
 echo -e "\033[1;33mConfiguring Devices.............."
 sleep 7
-## Make sure to use matching MTUs for all NICs that are a part of this script, otherwise undesired results may occur.
 macchanger -m $pres_mac at0
 ifconfig at0 up $sapip netmask $sasm
-ifconfig $pii mtu $mtu_size
 ifconfig at0 mtu $mtu_size
+
 if [[ $dhcp_autol == "Yes" ]];then
 	dhcp_pre_var--
 	dhcp_svr--
@@ -2923,7 +2919,8 @@ if [ -z $1  ]; then
 	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
 	kill_mon= ## Variable to determine if the "killing a monitor mode option" has been selected
 	dev_check= ## Nulled
-	current_ver=1.7
+	current_ver=2.0
+	rel_date="17 December 2011"
 	trap_check= ## Variable for exiting out of the Parent script if the update feature is launched
 	greet--
 else

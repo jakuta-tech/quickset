@@ -69,7 +69,7 @@ Changes:
 
 #2.1
 - Added DNSspoof'ing capabilities
-- quickset.sh has been "patched" odd numbered version control untill DNSspoof custom host capability is functional 
+- quickset.sh is now odd numbered version control until DNSspoof custom host capability is functional 
 - Rearranged Quick Attack Menu
 - Modified a couple of functions to use "sleep 1" -vs- read for 'speed and intensity purposes'
 - Modified dev_check--() fail timer to 1 second for readibility purposes

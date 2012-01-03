@@ -3,7 +3,7 @@ function script_info()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 2.1
+## Version: 2.1.1
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -497,7 +497,7 @@ M)AC Address Change
 
 P)revious Menu
 
-M)ain Menu\033[1;34m
+G)oto Main Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read var
 case $var in
@@ -512,7 +512,7 @@ case $var in
 		setups--;;
 	esac;;
 
-	m|M) main_menu--;;
+	g|G) main_menu--;;
 
 	*) mac_control--;;
 esac
@@ -3101,7 +3101,7 @@ if [ -z $1  ]; then
 	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
 	kill_mon= ## Variable to determine if the "killing a monitor mode option" has been selected
 	dev_check= ## Nulled
-	current_ver=2.1
+	current_ver=2.1.1
 	rel_date="03 January 2012"
 	trap_check= ## Variable for exiting out of the Parent script if the update feature is launched
 	greet--

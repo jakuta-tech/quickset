@@ -66,3 +66,14 @@ Changes:
 - Removed gateway warnings for Wireless Vaccuum/Stickypot/WiFi Extender.  Didn't like how it looked.  This will now require the user to know a little something about how their system is set up; but then again, quickset is not for skiddies.....
 - Modified Kill/Enable monitor mode settings to prevent a loop trap, thereby allowing a user to null the entry if they dont want to do it.
 - Slight modification of the Ferret menu for symetrics.....
+
+#2.1
+- Added DNSspoof'ing capabilities
+- quickset.sh has been "patched" odd numbered version control untill DNSspoof custom host capability is functional 
+- Rearranged Quick Attack Menu
+- Modified a couple of functions to use "sleep 1" -vs- read for 'speed and intensity purposes'
+- Modified dev_check--() fail timer to 1 second for readibility purposes
+- Changed "Proceed" option to "Continue" for usability.  Prior method was a numbered system to where the higher decimal number would be the option to continue on.  It was decided to use a constant variable as a method versus a changing number.
+- Removal of letters enclosed with () for readibility
+- Exchange of backquotes for $() to prevent the user from seeing certain outputs
+

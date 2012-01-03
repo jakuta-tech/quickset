@@ -139,6 +139,10 @@ function script_info()
 
 ## melissabubble for informing me about the "The Wireless Vaccuum" and "WiFi Range Extender" not working properly.  After careful study of the functions I came to the conclusion listed under the "Development Notes" up top.
 
+## VulpiArgenti for recommending the idea of an autoimplementing needed requirements for functions such as "Wireless Vaccuum" whereby packet forwarding is needed at the Kernel Level.
+## After much thought and deliberation, I implemented a check that will ask the user if they would like to turn on said named feature prior to proceeding.
+## Eventually this check will be implemented in all quickset.sh functions.
+
 ## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 sleep 0

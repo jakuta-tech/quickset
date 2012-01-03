@@ -1,4 +1,4 @@
-Current Version: 2.0
+Current Version: 2.1.1
 
 Changes:
 #0.3
@@ -76,4 +76,7 @@ Changes:
 - Changed "Proceed" option to "Continue" for usability.  Prior method was a numbered system to where the higher decimal number would be the option to continue on.  It was decided to use a constant variable as a method versus a changing number.
 - Removal of letters enclosed with () for readibility
 - Exchange of backquotes for $() to prevent the user from seeing certain outputs
+
+#2.1.1
+- Patched MAC change menu to properly go to desired menu.  2.1 had error with Main Menu and MAC Change using the same letter resulting in non-working case statement.
 

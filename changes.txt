@@ -1,4 +1,4 @@
-Current Version: 2.1.1
+Current Version: 2.3
 
 Changes:
 #0.3
@@ -80,3 +80,6 @@ Changes:
 #2.1.1
 - Patched MAC change menu to properly go to desired menu.  2.1 had error with Main Menu and MAC Change using the same letter resulting in non-working case statement.
 
+#2.3
+-Fixed stickypot bug caused by lack of "if statement", which would automatically run no_dev--() without comparing it against $pii being null or not
+-Eterm has replaced xterm, Eterm rocks!

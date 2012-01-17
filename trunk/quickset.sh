@@ -3,7 +3,7 @@ function script_info()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 2.3
+## Version: 2.3.1
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -1104,7 +1104,7 @@ M)ain Menu\033[1;34m
 			*) d_hosts= ;; ## Nulled
 		esac
 
-		dspoof_II--;;
+		dnsspoof_II--;;
 
 		3) nics--
 		ferret_II--;;
@@ -3105,8 +3105,8 @@ if [ -z $1  ]; then
 	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
 	kill_mon= ## Variable to determine if the "killing a monitor mode option" has been selected
 	dev_check= ## Nulled
-	current_ver=2.3
-	rel_date="07 January 2012"
+	current_ver=2.3.1
+	rel_date="16 January 2012"
 	trap_check= ## Variable for exiting out of the Parent script if the update feature is launched
 	greet--
 else

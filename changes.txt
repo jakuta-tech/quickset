@@ -1,6 +1,10 @@
-Current Version: 2.5
+Current Version: 2.7
 
 Changes:
+#2.7
+- Removal of the self-updating feature, this was found to be excessive due to the fact that quickset lies in a subversion repository
+- Modification of sleep timers
+
 #2.5
 - Still waiting on implementation of custom DNS hosts file
 - Added port check to stripem--()

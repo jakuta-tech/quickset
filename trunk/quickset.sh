@@ -3,7 +3,6 @@ function script_info()
 {
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
-## Version: 2.5
 ## Copyright (C) <2009>  <Snafu>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -64,19 +63,13 @@ function script_info()
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Change update to an optget feature.........
-
-## Implementation of ip_mac for MAC address checking
-
-## ## Change update function to launch external to the script regarding the launch itself.  The future update will be ran externally, exiting once complete, not within the script itself.
+## Implementation of ip_mac-- for MAC address checking
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Figure out if old PIDs are used during a power cycle...if not we'll do PID assignments to ensure kill -9s
-## Use PIDs to make a greppable list
-
-## svn up in update--(), this has some issue with regards to calling "svn up" from within a directory without .svn -->  Skipped '.' It gives an exit flag of 0 which defeats my purposes...  Only a factor if the user has quickset.sh in a directory called quickset that was not created with subversion itself.  To be dealt with at a later time 
+## Use PIDs to make a greppable list 
 
 ### `ifconfig mon0 | grep HWaddr | cut -d- -f1-6 | sed 's/-/:/g'` is much cleaner syntax for random mac usage....
 
@@ -85,8 +78,6 @@ function script_info()
 ## Add option to kill modified files like dhcp leases at the end of session if exited properly....
 
 ## Custom DNSspoof hosts file capabilities; the capability is there, the functionality is not...
-
-## Make ip_mac--() MAC checker work properly.
 
 ## Verify possible values for MTU size on ap_setup--()
 
@@ -141,7 +132,7 @@ function script_info()
 ## Grant Pearson for having me RTFM with xterm debugging
 
 ## comaX for showing me how much easier it is to follow conditional statements if blank spaces are added in.  This comes in really handy with editors like Kate with folding markers shown.
-## Credit for the variable parser within mass_arp--() and the majority of the brainpower behind update--()
+## Credit for the variable parser within mass_arp--()
 
 ## ShadowMaster for showing me the error of my ways with what I thought was "ARP Amplification".
 ## Due to his thoughts on the matter, I have completly rewritten the wifi_101--() portion of this script.
@@ -710,7 +701,7 @@ QuickSet - A Quick Way to Setup a Wired/Wireless Hack
           Version \033[1;33m$current_ver\033[1;34m (\033[1;33m$rel_date\033[1;34m)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-sleep 3
+sleep 2.5
 ap_check= ## Nulled
 init_setup--
 }
@@ -719,12 +710,9 @@ init_setup--
 
 main_menu--()
 {
-if [[ $trap_check == "on" ]];then
-	exit 0
-else
-	trap trap-- INT
-	clear
-	echo -e "\033[1;34m
+trap trap-- INT
+clear
+echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~
     QuickSet (\033[1;33m$current_ver\033[1;34m)
      --Main Menu--
@@ -738,28 +726,22 @@ Make Your Selection Below
 
 4) Routing Features
 
-5) Check for Updates
-
 E)xit Script\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-	read var
-	case $var in
-		1) setups--;;
+read var
+case $var in
+	1) setups--;;
 
-		2) wifi_101--;;
+	2) wifi_101--;;
 
-		3) atk_menu--;;
+	3) atk_menu--;;
 
-		4) routing--;;
+	4) routing--;;
 
-		5) update--;;
+	e|E) cleanup--;;
 
-		e|E) cleanup--;;
-
-		*) main_menu--;;
-	esac
-
-fi
+	*) main_menu--;;
+esac
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~ END Starting Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
@@ -925,73 +907,8 @@ case $var in
 esac
 exit
 }
-
-update--()
-{
-clear
-update_ver=$(curl http://quickset.googlecode.com/svn/trunk/changes.txt)
-if [ $? -ne 0 ];then
-	echo -e "\033[1;33mNo Internet Connection!"
-	sleep 1.2
-	main_menu--
-else
-	update_ver=$(echo $update_ver | grep -iw "Current Version:" | awk '{print $3}')
-	if [[ $update_ver > $current_ver ]];then
-		var= ## Nulled
-		while [ -z $var ];do
-			echo -e "\n\n\033[1;33mYou are running version $current_ver\033[1;33m.\033[36m  Do you want to update to \033[1;33m$update_ver\033[36m? (y or n)"
-			read update
-			case $update in
-				y|Y) echo -e "\033[1;33m[+] Updating script..."
-				echo $PWD | grep -iw quickset > /dev/null
-				if [ $? -ne 0 ];then
-					svn co http://quickset.googlecode.com/svn/trunk quickset
-					if [ $? -ne 0 ];then
-						echo -e "\033[1;33mUpdate Failed!"
-						update_check="fail"
-					else
-						cd quickset && chmod 755 quickset.sh
-						echo -e "\033[1;33m[-] Script updated and now located in $PWD"
-						sleep 2
-						update_check="pass"
-					fi
-
-				else
-					svn up
-					if [ $? -ne 0 ];then
-						echo -e "\033[1;33mUpdate Failed!"
-						update_check="fail"
-					else
-						chmod 755 quickset.sh
-						echo -e "\033[1;33m[-] Script updated!"
-						update_check="pass"
-					fi
-
-				fi
-
-				if [[ $update_check == "pass" ]];then
-					trap_check="on"
-					./quickset.sh
-				else
-					main_menu--
-				fi;;
-
-				n|N) main_menu--;;
-
-				*) var= ;; ## Nulled
-			esac
-
-		done
-
-	else
-		echo -e "\033[1;33mYou Are Running The Latest Version!"
-		sleep 1
-		main_menu--
-	fi
-
-fi
-}
 ##~~~~~~~~~~~~~~~~~~~~~~~~ END main_menu-- functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
 
 ##~~~~~~~~~~~~~~~~~~~~~~~ BEGIN setups-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~##
 naming--()
@@ -3261,6 +3178,8 @@ venue--
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+current_ver=2.7
+rel_date="2 February 2012"
 if [ "$UID" -ne 0 ];then
 	echo -e "\033[31mMust be ROOT to run this script"
 	exit 87
@@ -3272,9 +3191,6 @@ if [ -z $1  ]; then
 	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
 	kill_mon= ## Variable to determine if the "killing a monitor mode option" has been selected
 	dev_check= ## Nulled
-	current_ver=2.5
-	rel_date="27 January 2012"
-	trap_check= ## Variable for exiting out of the Parent script if the update feature is launched
 	greet--
 else
 	usage--

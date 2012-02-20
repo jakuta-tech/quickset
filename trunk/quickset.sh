@@ -68,6 +68,8 @@ function script_info()
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## DHCP server shows itself being launched even if it isn't, need to make it say launched only if/when it really does launch.
+
 ## Figure out if old PIDs are used during a power cycle...if not we'll do PID assignments to ensure kill -9s
 ## Use PIDs to make a greppable list 
 
@@ -78,8 +80,6 @@ function script_info()
 ## Add option to kill modified files like dhcp leases at the end of session if exited properly....
 
 ## Custom DNSspoof hosts file capabilities; the capability is there, the functionality is not...
-
-## Verify possible values for MTU size on ap_setup--()
 
 ## Implementation of IP check functionality for multiple tgts on arpspoof_II--(), ip range & custom dns entries on dhcp_svr--()
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -112,7 +112,10 @@ function script_info()
 
 ## On 7 January 2012, Eterm replaced xterm.  This is a much slicker program.
 
-## One 27 January 2012, an IP address check function was implemented to ensure that a valid IP address exists for IP address variables.  This still has some work to do to it regarding making sure it has 4 octets and 4 octets only.  This will surely be implemented later on. 
+## On 27 January 2012, an IP address check function was implemented to ensure that a valid IP address exists for IP address variables.  This still has some work to do to it regarding making sure it has 4 octets and 4 octets only.  This will surely be implemented later on.
+
+## On 20 February the ranges for MTU value have been confirmed to be between 42 - 6122.  This check feature has now been fully implemented.
+##As well, quickset.sh was opened to the world with respect towards allowed frequencies for WiFi.  quickset.sh will now allow a user to choose channels 1-14, versus the old way of using only 1-11.  Be advised though, I do not feel like writing a check function to make sure yer regulatory agent allows a specific channel.  It is up to you to set the regulatory agent via iw prior to choosing a channel.  ie...  If you have an american laptop, by default, channel 1-11 will be available to you.  Trying to choose channel 12 will probably result in a failure of quickset.sh of some type, not sure and do not care enough to figure this out right now.  Just make sure you have set it prior to using quickset.sh and you will be good to go.
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~## 
 
 
@@ -129,21 +132,28 @@ function script_info()
 ## My main scripting style is derived from carlos_perez@darkoperator.com
 ## Credit for some of the routing features in this script to him as well
 
-## Grant Pearson for having me RTFM with xterm debugging
+## Grant Pearson:
+## For having me RTFM with xterm debugging
 
-## comaX for showing me how much easier it is to follow conditional statements if blank spaces are added in.  This comes in really handy with editors like Kate with folding markers shown.
+## comaX:
+## Showing me how much easier it is to follow conditional statements if blank spaces are added in.  This comes in really handy with editors like Kate with folding markers shown.
 ## Credit for the variable parser within mass_arp--()
 
-## ShadowMaster for showing me the error of my ways with what I thought was "ARP Amplification".
+## ShadowMaster:
+## Showing me the error of my ways with what I thought was "ARP Amplification".
 ## Due to his thoughts on the matter, I have completly rewritten the wifi_101--() portion of this script.
 
-## melissabubble for informing me about the "The Wireless Vaccuum" and "WiFi Range Extender" not working properly.  After careful study of the functions I came to the conclusion listed under the "Development Notes" up top.
+## melissabubble:
+## Informing me about the "The Wireless Vaccuum" and "WiFi Range Extender" not working properly.  After careful study of the functions I came to the conclusion listed under the "Development Notes" up top.
 
-## VulpiArgenti for recommending the idea of an autoimplementing needed requirements for functions such as "Wireless Vaccuum" whereby packet forwarding is needed at the Kernel Level.
-## After much thought and deliberation, I implemented a check that will ask the user if they would like to turn on said named feature prior to proceeding.
-## Eventually this check will be implemented in all quickset.sh functions.
+## VulpiArgenti:
+## Recommending the idea of an auto-implementing needed requirements for functions such as "Wireless Vaccuum" whereby packet forwarding is needed at the Kernel Level.
+## After much thought and deliberation, I implemented a check that will ask the user if they would like to turn on said named feature prior to proceeding.  Eventually this check will be implemented in all quickset.sh functions that should require the usage thereof...
+## For giving me the idea to allow channels 12-14 with respect to wifi capabilities.  I had always used US channels in the past, but why not open this up to other channels.....
+## For the rockin syntax with respect to Enabling Monitor Mode by grepping out airmon-ng's output to enter the variable automatically.  This saved some time with respect to the quick in quickset, nice job!
 
-## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
+## My wife:
+## For always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 sleep 0
 }
@@ -281,20 +291,11 @@ else
 		fi
 
 	echo -e "\033[1;33m"
-	airmon-ng start $phys_dev
-	sleep 1
-	var= ## Nulled
-	while [ -z $var ];do
-		echo -e "\033[36m\nDevice Name Assigned for Monitor Mode on \033[1;33m$phys_dev\033[36m?\n(i.e.  mon0, mon1, mon2?, etc....)"
-		read var
-		dev_check_var=$var
-		dev_check--
-		if [[ $dev_check == "fail" ]];then
-			var= ## Nulled
-		fi
-
-	done
-
+	var=$(airmon-ng start wlan0 | tee /tmp/airmon_output | grep enabled | awk '{print $5}' | sed 's/)//g')
+	clear
+	cat /tmp/airmon_output
+	sleep 2.5
+	shred -u /tmp/airmon_output
 	pii=$var
 fi
 }
@@ -533,13 +534,6 @@ trap--()
 echo -e "\033[31m\nPlease Exit Out of The Script Properly"
 sleep 2
 main_menu--
-}
-
-trap_101--()
-{
-echo -e "\033[31m\nPlease Exit Out of The Script Properly"
-sleep 2
-cleanup_101--
 }
 
 no_dev--()
@@ -1247,10 +1241,10 @@ M)ain Menu\033[1;34m
 			case $wifi_check in
 				wireless) fer_chan= ## Nulled
 				while [ -z $fer_chan ];do
-					echo -e "\033[36m\nWireless Channel to Sniff? (1-11)"
+					echo -e "\033[36m\nWireless Channel to Sniff? (1-14)"
 					read fer_chan
 					case $fer_chan in
-						1|2|3|4|5|6|7|8|9|10|11) ;;
+						1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
 						*) fer_chan= ;; ## Nulled
 					esac
 				done
@@ -1800,18 +1794,18 @@ case $var in
 
 	ap_setup--;;
 
-	4) echo -e "\033[36m\nSoftAP Channel?"
+	4) echo -e "\033[36m\nSoftAP Channel? (1-14)"
 	read sac
 	case $sac in
-		1|2|3|4|5|6|7|8|9|10|11) ;;
+		1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
 		*) sac= ;; ## Nulled
 	esac
 
 	ap_setup--;;
 
-	5) echo -e "\033[36m\nDesired MTU Size?"
+	5) echo -e "\033[36m\nDesired MTU Size? (42-6122)"
 	read mtu_size
-	if [[ $mtu_size -lt 1 || $mtu_size -gt 1800 ]];then
+	if [[ $mtu_size -lt 42 || $mtu_size -gt 6122 ]];then
 		mtu_size= ## Nulled
 	fi
 
@@ -1985,18 +1979,18 @@ esac
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 wifi_101--()
 {
-trap trap_101-- INT
+trap trap-- INT
 
 ##~~~~~~~~~~~~~~~~~~ BEGIN wifi_101-- Repitious Functions ~~~~~~~~~~~~~~~~~~~~~##
 	tchan--()
 	{
 	tc= ## tgt channel
 	while [ -z $tc ];do
-		echo -e "\033[36m\nTgt Channel? (1-11)"
+		echo -e "\033[36m\nTgt Channel? (1-14)"
 		read tc
-### Need to learn to case within range...Also learn if within range (with sanitization) [1-11]???
+### Need to learn to case within range...Also learn if within range (with sanitization) [1-14]???
 		case $tc in
-			1|2|3|4|5|6|7|8|9|10|11) ;;
+			1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
 			*) tc= ## Nulled
 		esac
 
@@ -2190,7 +2184,7 @@ M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
-		1) echo -e "\033[36m\nSpecified Channel(s)?\n(ie.. 1) (ie.. 1,2,3) (ie.. 1-11)"
+		1) echo -e "\033[36m\nSpecified Channel(s)?\n(ie.. 1) (ie.. 1,2,3) (ie.. 1-14)"
 		read sc
 		wifi_scan--;;
 
@@ -2303,7 +2297,7 @@ M)ain Menu\033[1;34m
 			kill -9 $wifi_dea_pid
 			sc= ## Nulled
 			while [ -z $sc ];do
-				echo -e "\033[36m\nSpecified Channel(s)?\n(ie.. 1) (ie.. 1,2,3) (ie.. 1-11)"
+				echo -e "\033[36m\nSpecified Channel(s)?\n(ie.. 1) (ie.. 1,2,3) (ie.. 1-14)"
 				read sc
 			done
 
@@ -2377,10 +2371,10 @@ M)ain Menu\033[1;34m
 
 	clear
 	while [ -z $sc ];do
-		echo -e "\033[36m\nSpecified Channel? (1-11) {choose only one channel}"
+		echo -e "\033[36m\nSpecified Channel? (1-14)\033[31m {choose only one channel}\033[36m"
 		read sc
 		case $sc in
-			1|2|3|4|5|6|7|8|9|10|11) ;;
+			1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
 			*) sc= ## Nulled
 		esac
 
@@ -3166,20 +3160,14 @@ M)ain Menu\033[1;34m
 	WPA--
 	}
 ##~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- WPA-- sub-functions ~~~~~~~~~~~~~~~~~~~~##
-
-	cleanup_101--()
-	{
-	main_menu--
-	}
-
 ## wifi_101-- Launcher
 venue--
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-current_ver=2.7
-rel_date="2 February 2012"
+current_ver=2.9
+rel_date="20 February 2012"
 if [ "$UID" -ne 0 ];then
 	echo -e "\033[31mMust be ROOT to run this script"
 	exit 87

@@ -1,6 +1,13 @@
-Current Version: 2.7
+Current Version: 2.9
 
 Changes:
+#2.9
+- removed unneeded functions of trap_101--() && cleanup_101--()
+- Added the ability to use channels 12-14 for the wireless portions of the script
+- Added in the MTU ranges of 42-6122
+- Implemented syntax to automatically input the variable for monitor mode via grepping of airmon-ngs output.
+- Redid the layout for Credits and Kudos
+
 #2.7
 - Removal of the self-updating feature, this was found to be excessive due to the fact that quickset lies in a subversion repository
 - Modification of sleep timers

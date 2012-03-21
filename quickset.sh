@@ -143,6 +143,8 @@ function script_info()
 
 ## melissabubble:
 ## Informing me about the "The Wireless Vaccuum" and "WiFi Range Extender" not working properly.  After careful study of the functions I came to the conclusion listed under the "Development Notes" up top.
+## Props on finding the "Enable Monitor Mode" bug.  I'm not sure if that was in previous versions and darn sure to feel like trying to find out.  Either way, darn fine job finding it and pointing it out.  Using the wrong NIC could have had "serious" consequences depending on the situation of a pentest.
+
 
 ## VulpiArgenti:
 ## Recommending the idea of an auto-implementing needed requirements for functions such as "Wireless Vaccuum" whereby packet forwarding is needed at the Kernel Level.
@@ -239,6 +241,7 @@ var= ## Nulled
 KM= ## Device to kill
 clear
 echo -e "\033[1;33m"
+airmon-ng
 var_II=$(ifconfig -a | grep --color=never wlan | awk '{ print $1 }')
 for var_II in $var_II; do
 	echo -e "\033[1;33m\n$var_II"
@@ -288,20 +291,20 @@ if [[ $kill_mon == "kill" ]];then
 	echo -e "\n\n\033[1;32mPress Enter to Continue"
 	read
 else
-		echo -e "\033[36m\nPhysical Device to Enable Monitor Mode on?"
-		read phys_dev
-		if [[ -z $phys_dev ]];then
-			return
-		fi
+	echo -e "\033[36m\nPhysical Device to Enable Monitor Mode on?"
+	read phys_dev
+	if [[ -z $phys_dev ]];then
+		return
+	fi
 
-		dev_check_var=$phys_dev
-		dev_check--
-		if [[ $dev_check == "fail" ]];then
-			return
-		fi
+	dev_check_var=$phys_dev
+	dev_check--
+	if [[ $dev_check == "fail" ]];then
+		return
+	fi
 
 	echo -e "\033[1;33m"
-	var=$(airmon-ng start wlan0 | tee /tmp/airmon_output | grep enabled | awk '{print $5}' | sed 's/)//g')
+	var=$(airmon-ng start $phys_dev | tee /tmp/airmon_output | grep enabled | awk '{print $5}' | sed 's/)//g')
 	clear
 	cat /tmp/airmon_output
 	sleep 2.5
@@ -3181,8 +3184,8 @@ venue--
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-current_ver=3.0
-rel_date="20 March 2012"
+current_ver=3.0.2
+rel_date="21 March 2012"
 if [ "$UID" -ne 0 ];then
 	echo -e "\033[31mMust be ROOT to run this script"
 	exit 87

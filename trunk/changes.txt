@@ -1,6 +1,9 @@
-Current Version: 3.0
+Current Version: 3.0.2
 
 Changes:
+#3.0.2
+- Fixed monitormode--(), where enabling monitor mode was using wlan0 instead of the $phys_dev variable.
+
 #3.0
 - Fixed no_dev--() with respect to Internet connected NICs and Monitor Mode NICs for null entries allowing the user to make a null entry and proceed back to the previous menu
 - Removed physical NIC variable when asked for it during routing features, this was prior to my knowliedge of using cut and such, to query monitor mode nic MAC and such...

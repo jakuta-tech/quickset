@@ -1,6 +1,17 @@
-Current Version: 2.9
+Current Version: 3.0
 
 Changes:
+#3.0
+- Fixed no_dev--() with respect to Internet connected NICs and Monitor Mode NICs for null entries allowing the user to make a null entry and proceed back to the previous menu
+- Removed physical NIC variable when asked for it during routing features, this was prior to my knowliedge of using cut and such, to query monitor mode nic MAC and such...
+- Modified nics--() to look much nicer and chopped off those frikin 0s on the NIC output for MAC addresses
+- Fixed a loop in mac_control_II--() that prevented the user from regressing to a previous menu
+- Adjusted monitormode--() to have prettier output with reference to mac addresses
+- Fixed the loop issue in wifi_deauth_II--() not allowing previous menu regression from both Specified Channel and Router BSSID entry selections.  As well added screen clearing to the mix to make the output cleaner
+- Added screen clearing to wifi_deauth_III 
+- Modified cleanup--() to only kick the Hidden Process check if a process that is actually hidden from the user has taken place, thereby allowing for a speedier exit from quickset.sh.  As of now the only real hidden process is the dhcp service.  Will advice in the future if there are further such "hidden" processes
+- Fixed the bug within dhcp_svr--() that didnt allow the user to change and implement custom DNS server entries
+
 #2.9
 - removed unneeded functions of trap_101--() && cleanup_101--()
 - Added the ability to use channels 12-14 for the wireless portions of the script

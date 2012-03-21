@@ -64,6 +64,8 @@ function script_info()
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Implementation of ip_mac-- for MAC address checking
+
+## Custom hosts file capability for dnsspoof
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -75,11 +77,7 @@ function script_info()
 
 ### `ifconfig mon0 | grep HWaddr | cut -d- -f1-6 | sed 's/-/:/g'` is much cleaner syntax for random mac usage....
 
-## Possible revert to gateway warning if "old messy way" via dhcp works for not showing same ip addie twice....
-
 ## Add option to kill modified files like dhcp leases at the end of session if exited properly....
-
-## Custom DNSspoof hosts file capabilities; the capability is there, the functionality is not...
 
 ## Implementation of IP check functionality for multiple tgts on arpspoof_II--(), ip range & custom dns entries on dhcp_svr--()
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -114,14 +112,14 @@ function script_info()
 
 ## On 27 January 2012, an IP address check function was implemented to ensure that a valid IP address exists for IP address variables.  This still has some work to do to it regarding making sure it has 4 octets and 4 octets only.  This will surely be implemented later on.
 
-## On 20 February the ranges for MTU value have been confirmed to be between 42 - 6122.  This check feature has now been fully implemented.
+## On 20 February 2012, the ranges for MTU value have been confirmed to be between 42 - 6122.  This check feature has now been fully implemented.
 ##As well, quickset.sh was opened to the world with respect towards allowed frequencies for WiFi.  quickset.sh will now allow a user to choose channels 1-14, versus the old way of using only 1-11.  Be advised though, I do not feel like writing a check function to make sure yer regulatory agent allows a specific channel.  It is up to you to set the regulatory agent via iw prior to choosing a channel.  ie...  If you have an american laptop, by default, channel 1-11 will be available to you.  Trying to choose channel 12 will probably result in a failure of quickset.sh of some type, not sure and do not care enough to figure this out right now.  Just make sure you have set it prior to using quickset.sh and you will be good to go.
+
+## On 20 March 2012, quickset.sh once again became an even numbered version indicating to users that all known bugs have been worked out with the previous bug caused by the addition of a function allowing for implementation of using custom DNS servers with dhcp3-server!  It's still not perfect sailing as I have not implemented the ip_mac--() function into this just yet, the user could still jack this up, but I will implement this when I get the time.  Version 3.0 has been a long time coming and it needs to drop into the wild ASAP!
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~## 
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Multiple Sticky Pots are causing issues.  This will probably affect the other two choices for SoftAPs as well.  Found via usage of completly different network settings.  This leads to a loop at the method selection.  Not a script killer, but should be addressed for learning purposes sometime in the near future.  A simple hack to prevent this bug, but not fix it would be to add a variable similar to the dhcpd cleanup function variable for use in seeing if a fake AP already exists.  After I figure out the reason behind the bug, I will decide on whether or not to allow multiple APs.
-
 ## Airbase-NG segmentation fault on BT5r1 (32-bit Gnome)
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
@@ -151,6 +149,7 @@ function script_info()
 ## After much thought and deliberation, I implemented a check that will ask the user if they would like to turn on said named feature prior to proceeding.  Eventually this check will be implemented in all quickset.sh functions that should require the usage thereof...
 ## For giving me the idea to allow channels 12-14 with respect to wifi capabilities.  I had always used US channels in the past, but why not open this up to other channels.....
 ## For the rockin syntax with respect to Enabling Monitor Mode by grepping out airmon-ng's output to enter the variable automatically.  This saved some time with respect to the quick in quickset, nice job!
+### Mad credit goes into the idea for keeping the "quick" in quickset by having the script call for the NICs MAC address ahead of time with regards to source MAC for some of the attacks.  When I first read the post, I was a little lost, and disregarded this idea for quite some time.  It wasn't until around a month later that I realized the genius behind the idea and scripted something up.  Props my friend, props....
 
 ## My wife:
 ## For always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
@@ -240,7 +239,18 @@ var= ## Nulled
 KM= ## Device to kill
 clear
 echo -e "\033[1;33m"
-ifconfig -a | grep wlan | awk '{ print $1"   "$5 }'; ifconfig -a | grep mon | awk '{ print $1"    "$5 }'
+var_II=$(ifconfig -a | grep --color=never wlan | awk '{ print $1 }')
+for var_II in $var_II; do
+	echo -e "\033[1;33m\n$var_II"
+	ifconfig $var_II | grep --color=never wlan | awk '{ print $5 }' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g'
+done
+
+var_II=$(ifconfig -a | grep --color=never mon | awk '{ print $1 }')
+for var_II in $var_II; do
+	echo -e "\033[1;33m\n$var_II"
+	ifconfig $var_II | grep --color=never mon | awk '{ print $5 }' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g'
+done
+
 sleep 1
 if [[ $kill_mon == "kill" ]];then
 	echo -e "\033[31m\n
@@ -304,7 +314,13 @@ nics--()
 {
 clear
 echo -e "\033[1;33m"
-airmon-ng && ifconfig -a | grep --color=never HWaddr | awk '{ print $1"    "$5 }'
+airmon-ng
+var=$(ifconfig -a | grep --color=never HWaddr | awk '{ print $1 }')
+for var in $var; do
+	echo -e "\033[1;33m\n$var"
+	ifconfig $var | grep --color=never HWaddr | awk '{ print $5 }' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g'
+done
+
 echo -e "\n\n\033[1;32mPress Enter to Continue"
 read
 }
@@ -324,18 +340,20 @@ mac_control--()
                               ***WARNING***\033[32m
        Do not attempt to directly change a Virtual Device (Monitor Mode NIC)
 This script requires Physical and Virtual devices to have matching MAC Addresses\033[31m
-                              ***WARNING***"
+                              ***WARNING***\n\n\n\n\n\n"
 	sleep 1
-	while [ -z $mac_dev ];do
-		echo -e "\033[36m\n\n\n\n\n\nNIC to Change?"
-		read mac_dev
+	echo -e "\033[36mNIC to Change?   (\033[1;32mLeave Blank to Return to Previous Menu\033[36m)"
+	read mac_dev
+	if [[ -z $mac_dev ]];then
+		mac_control--
+	else
 		dev_check_var=$mac_dev
 		dev_check--
 		if [[ $dev_check == "fail" ]];then
-			mac_dev= ## Nulled
+			mac_control--
 		fi
 
-	done
+	fi
 
 	while [ -z $rand ];do
 		echo -e "\033[36m\nRandom MAC? (y or n)"
@@ -344,7 +362,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			y|Y) ;;
 
 			n|N) while [ -z $sam ];do
-				echo -e "\033[36m\nDesired MAC Address for \033[1;33m$mac_dev\033[36m?"
+				echo -e "\033[36m\nDesired MAC Address for \033[1;33m$mac_dev\033[36m?   (\033[1;32mi.e. aa:bb:cc:dd:ee:ff\033[36m)"
 				read sam
 			done;;
 
@@ -554,7 +572,9 @@ case $1 in
 			if [[ $dev_check == "fail" ]];then
 				pii= ## Nulled
 				var= ## Nulled
-			fi;;
+			fi
+
+			sm=$(ifconfig $pii | grep --color=never HWaddr | awk '{ print $5 }' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g');;
 
 			routing--)
 			if [[ $dev_check == "fail" ]];then
@@ -564,7 +584,7 @@ case $1 in
 
 		esac;;
 
-		n|N) 
+		*) 
 		case $dev_parent in
 			venue--) 
 			var= ;; ## Nulled
@@ -594,7 +614,7 @@ case $1 in
 
 		esac;;
 
-		n|N) 
+		*) 
 		case $dev_parent in
 			routing--) 
 			rte_choice= ;;
@@ -892,16 +912,18 @@ esac
 
 cleanup--()
 {
-echo -e "\033[36m\nPerform Cleanup of Hidden Processes? (y or n)"
-read var
-case $var in
-	y|Y) if [[ $dhcp_svr_stat == "active" ]]; then
-		killall -9 dhcpd3
-	fi;;
-esac
+if [[ $dhcp_svr_stat == "active" ]]; then
+	echo -e "\033[36m\nPerform Cleanup of Hidden Processes? (y or n)"
+	read var
+	case $var in
+		y|Y) killall -9 dhcpd3;;
+	esac
+
+fi
+
 exit
 }
-##~~~~~~~~~~~~~~~~~~~~~~~~ END main_menu-- functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~ END main_menu-- functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##2) Custom Hostfile  [\033[1;33m$d_hosts\033[36m]
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~ BEGIN setups-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -1114,9 +1136,7 @@ dnsspoof--()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
 1) Listening NIC    [\033[1;33m$dspoof_dev\033[36m]
 
-2) Custom Hostfile  [\033[1;33m$d_hosts\033[36m]
-
-3) List Available NICs
+2) List Available NICs
 
 C)ontinue
 
@@ -1136,17 +1156,18 @@ M)ain Menu\033[1;34m
 	
 		dnsspoof_II--;;
 
-		2) echo -e "\033[36m\nUse Custom DNS Hosts File? (y or n)"
-		read d_hosts
-		case $d_hosts in
-			y|Y) d_hosts="Yes" ;;
-			n|N) d_hosts="No" ;;
-			*) d_hosts= ;; ## Nulled
-		esac
+# 2) Custom Hostfile  [\033[1;33m$d_hosts\033[36m]
+# 		2) echo -e "\033[36m\nUse Custom DNS Hosts File? (y or n)"
+# 		read d_hosts
+# 		case $d_hosts in
+# 			y|Y) d_hosts="Yes" ;;
+# 			n|N) d_hosts="No" ;;
+# 			*) d_hosts= ;; ## Nulled
+# 		esac
+# 
+# 		dnsspoof_II--;;
 
-		dnsspoof_II--;;
-
-		3) nics--
+		2) nics--
 		ferret_II--;;
 
 		c|C) if [[ -z $dspoof_dev || -z $d_hosts ]];then
@@ -1533,7 +1554,7 @@ DHCPDCONF="/tmp/dhcpd.conf" ## Used by dhcpd3
 
 5) IP Range            [\033[1;33m$sair\033[36m]
 
-6) Custom DNS Entries  [\033[1;33m$sair\033[36m]
+6) Custom DNS Entries  [\033[1;33m$dns_cus\033[36m]
 
 7) Tail DHCP Log       [\033[1;33m$dhcp_tail\033[36m]
 
@@ -1586,26 +1607,27 @@ M)ain Menu\033[1;34m
 		read sair
 		dhcp_func--;;
 
-		6) echo -e "\033[36m\nCreate a Tail of the DHCP Log? (y or n)"
+		6) echo -e "\033[36m\nCreate Custom DNS Entries? (y or n)"
+		read dns_cus
+		case $dns_cus in
+			y|Y) echo -e "\033[1;32m\nEnter the desired IP Addressess of the DNS seperated by a space
+i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
+			read dns_entry
+			dns_cus="Yes" ;;
+
+			n|N) dns_cus="No" ;;
+
+			*) dns_cus= ;; ## Nulled
+		esac
+
+		dhcp_func--;;
+
+		7) echo -e "\033[36m\nCreate a Tail of the DHCP Log? (y or n)"
 		read dhcp_tail
 		case $dhcp_tail in
 			y|Y) dhcp_tail="Yes" ;;
 			n|N) dhcp_tail="No" ;;
 			*) dhcp_tail= ;; ## Nulled
-		esac
-
-		dhcp_func--;;
-
-		7) echo -e "\033[36m\nCreate Custom DNS Entries? (y or n)"
-		read dns_cus
-		case $dns_cus in
-			y|Y) echo -e "\033[1;32mEnter the desired IP Addressess of the DNS seperated by a space
-i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
-			read dns_entry ;;
-
-			n|N) dns_cus="No" ;;
-
-			*) dns_cus= ;; ## Nulled
 		esac
 
 		dhcp_func--;;
@@ -1746,17 +1768,15 @@ echo -e "\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         --Soft AP Parameters--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\033[36m
-1) SoftAP Physical Device [\033[1;33m$phys_dev\033[36m] \033[31m(Not The Monitor Mode Device Name)\033[36m
+1) SoftAP IP Address      [\033[1;33m$sapip\033[36m]
 
-2) SoftAP IP Address      [\033[1;33m$sapip\033[36m]
+2) SoftAP Subnet Mask     [\033[1;33m$sasm\033[36m]
 
-3) SoftAP Subnet Mask     [\033[1;33m$sasm\033[36m]
+3) SoftAP Channel         [\033[1;33m$sac\033[36m]
 
-4) SoftAP Channel         [\033[1;33m$sac\033[36m]
+4) MTU Size               [\033[1;33m$mtu_size\033[36m]
 
-5) MTU Size               [\033[1;33m$mtu_size\033[36m]
-
-6) DHCP Server Autolaunch [\033[1;33m$dhcp_autol\033[36m]
+5) DHCP Server Autolaunch [\033[1;33m$dhcp_autol\033[36m]
 
 C)ontinue
 
@@ -1766,17 +1786,7 @@ M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 case $var in
-	1) echo -e "\033[36m\nSoftAP Physical Device?"
-	read phys_dev
-	dev_check_var=$phys_dev
-	dev_check--
-	if [[ $dev_check == "fail" ]];then
-		phys_dev= ## Nulled
-	fi
-
-	ap_setup--;;
-
-	2) echo -e "\033[36m\nSoftAP IP Address?"
+	1) echo -e "\033[36m\nSoftAP IP Address?"
 	read sapip
 	ip_mac-- ip $sapip
 		if [[ $ip_mac == "fail" ]];then
@@ -1785,7 +1795,7 @@ case $var in
 
 	ap_setup--;;
 
-	3) echo -e "\033[36m\nSoftAP Subnet Mask?"
+	2) echo -e "\033[36m\nSoftAP Subnet Mask?"
 	read sasm
 	ip_mac-- ip $sasm
 		if [[ $ip_mac == "fail" ]];then
@@ -1794,7 +1804,7 @@ case $var in
 
 	ap_setup--;;
 
-	4) echo -e "\033[36m\nSoftAP Channel? (1-14)"
+	3) echo -e "\033[36m\nSoftAP Channel? (1-14)"
 	read sac
 	case $sac in
 		1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
@@ -1803,7 +1813,7 @@ case $var in
 
 	ap_setup--;;
 
-	5) echo -e "\033[36m\nDesired MTU Size? (42-6122)"
+	4) echo -e "\033[36m\nDesired MTU Size? (42-6122)"
 	read mtu_size
 	if [[ $mtu_size -lt 42 || $mtu_size -gt 6122 ]];then
 		mtu_size= ## Nulled
@@ -1811,7 +1821,7 @@ case $var in
 
 	ap_setup--;;
 
-	6) echo -e "\033[36m\nAutolaunch DHCP Server? (y or n)"
+	5) echo -e "\033[36m\nAutolaunch DHCP Server? (y or n)"
 	read dhcp_autol
 	case $dhcp_autol in
 		y|Y) dhcp_autol="Yes" ;;
@@ -1821,7 +1831,7 @@ case $var in
 
 	ap_setup--;;
 
-	c|C) if [[ -z $phys_dev || -z $sapip || -z $sasm || -z $sac || -z $mtu_size || -z $dhcp_autol ]];then
+	c|C) if [[ -z $sapip || -z $sasm || -z $sac || -z $mtu_size || -z $dhcp_autol ]];then
 		echo -e "\033[31mAll Fields Must be Filled Before Proceeding"
 		sleep 1
 		ap_setup--
@@ -1844,9 +1854,11 @@ fi
 
 ap--()
 {
-#pres_mac= ## MAC Address for the SoftAP
-pres_mac=$(ifconfig $phys_dev | awk '{print $5}')
-pres_mac=$(echo $pres_mac | awk '{print $1}')
+## MAC Address for the SoftAP
+# pres_mac=$(ifconfig $phys_dev | awk '{print $5}')
+# pres_mac=$(echo $pres_mac | awk '{print $1}')
+pres_mac=$(ifconfig $pii | awk '{ print $5 }' | awk '{ print $1 }' | cut -c1-17 | sed 's/-/:/g')
+pres_mac=$(echo $pres_mac | awk '{ print $1 }')
 #blackhole targets every single probe request on current channel
 modprobe tun
 if [ $BB == "1" ]; then
@@ -2106,7 +2118,7 @@ M)ain Menu\033[1;34m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
-		1|2|3|4|5|7|8|0) if [ -z $pii ];then
+		1|2|3|4|5|6|7|8|0) if [ -z $pii ];then
 			dev_parent="venue--"
 			no_dev-- monitor
 		fi;;
@@ -2129,7 +2141,8 @@ M)ain Menu\033[1;34m
 
 		4) 	ska_xor= ## Variable for file used w/ SKA injection
 		hid_essid= ## Variable for hidden ESSID
-		sm= ## source mac
+# 		sm= ## source mac
+		
 		rd=10 ## reauthentication delay
 		ppb=1 ## Re-authentication packets per burst
 		kaf=3 ## keep-alive frequency
@@ -2316,6 +2329,7 @@ M)ain Menu\033[1;34m
 			{
 			r_d= ## Repeat DeAuth Variable
 			while [ -z $r_d ];do
+				clear
 				echo -e "\033[36m\n(R)epeat DeAuth\n(C)hange or Add Client for DeAuth\n(S)witch Channel or Change Router BSSID\n(E)xit DeAuth" 
 				read r_d
 			done
@@ -2343,6 +2357,7 @@ M)ain Menu\033[1;34m
 			}
 
 		while [ -z $dt ];do
+			clear
 			echo -e "\033[36m\n(B)roadcast Deauth\n(C)lient Targeted DeAuth\n(S)witch Channel or Change Router BSSID\n(E)xit DeAuth"
 			read dt
 		done
@@ -2370,20 +2385,19 @@ M)ain Menu\033[1;34m
 		}
 
 	clear
-	while [ -z $sc ];do
-		echo -e "\033[36m\nSpecified Channel? (1-14)\033[31m {choose only one channel}\033[36m"
-		read sc
-		case $sc in
-			1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
-			*) sc= ## Nulled
-		esac
 
-	done
+	echo -e "\033[36m\nSpecified Channel? (1-14)\033[31m {choose only one channel}\033[36m"
+	read sc
+	case $sc in
+		1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
+		*) venue--
+	esac
 
-	while [ -z $rb ];do
-		echo -e "\033[36m\nRouter BSSID?"
-		read rb
-	done
+	echo -e "\033[36m\nRouter BSSID?"
+	read rb
+	if [[ -z $rb ]];then
+		venue--
+	fi
 
 	kill -9 $wifi_ias_pid
 	kill -9 $wifi_dea_pid
@@ -3161,13 +3175,14 @@ M)ain Menu\033[1;34m
 	}
 ##~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- WPA-- sub-functions ~~~~~~~~~~~~~~~~~~~~##
 ## wifi_101-- Launcher
+sm=$(ifconfig $pii | grep --color=never HWaddr | awk '{ print $5 }' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g')
 venue--
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-current_ver=2.9
-rel_date="20 February 2012"
+current_ver=3.0
+rel_date="20 March 2012"
 if [ "$UID" -ne 0 ];then
 	echo -e "\033[31mMust be ROOT to run this script"
 	exit 87

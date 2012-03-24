@@ -1,6 +1,10 @@
-Current Version: 3.0.2
+Current Version: 3.0.4
 
 Changes:
+#3.0.4
+- Removal of leading and trailing spaces within awk statements
+- Changed MAC address output to all lowercase
+
 #3.0.2
 - Fixed monitormode--(), where enabling monitor mode was using wlan0 instead of the $phys_dev variable.
 

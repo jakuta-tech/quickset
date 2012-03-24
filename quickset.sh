@@ -242,16 +242,16 @@ KM= ## Device to kill
 clear
 echo -e "\033[1;33m"
 airmon-ng
-var_II=$(ifconfig -a | grep --color=never wlan | awk '{ print $1 }')
+var_II=$(ifconfig -a | grep --color=never wlan | awk '{print $1}')
 for var_II in $var_II; do
 	echo -e "\033[1;33m\n$var_II"
-	ifconfig $var_II | grep --color=never wlan | awk '{ print $5 }' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g'
+	ifconfig $var_II | grep --color=never wlan | awk '{print $5}' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g'
 done
 
-var_II=$(ifconfig -a | grep --color=never mon | awk '{ print $1 }')
+var_II=$(ifconfig -a | grep --color=never mon | awk '{print $1}')
 for var_II in $var_II; do
 	echo -e "\033[1;33m\n$var_II"
-	ifconfig $var_II | grep --color=never mon | awk '{ print $5 }' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g'
+	ifconfig $var_II | grep --color=never mon | awk '{print $5}' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g'
 done
 
 sleep 1
@@ -318,10 +318,10 @@ nics--()
 clear
 echo -e "\033[1;33m"
 airmon-ng
-var=$(ifconfig -a | grep --color=never HWaddr | awk '{ print $1 }')
+var=$(ifconfig -a | grep --color=never HWaddr | awk '{print $1}')
 for var in $var; do
 	echo -e "\033[1;33m\n$var"
-	ifconfig $var | grep --color=never HWaddr | awk '{ print $5 }' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g'
+	ifconfig $var | grep --color=never HWaddr | awk '{print $5}' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g'
 done
 
 echo -e "\n\n\033[1;32mPress Enter to Continue"
@@ -577,7 +577,7 @@ case $1 in
 				var= ## Nulled
 			fi
 
-			sm=$(ifconfig $pii | grep --color=never HWaddr | awk '{ print $5 }' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g');;
+			sm=$(ifconfig $pii | grep --color=never HWaddr | awk '{print $5}' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g');;
 
 			routing--)
 			if [[ $dev_check == "fail" ]];then
@@ -1858,10 +1858,8 @@ fi
 ap--()
 {
 ## MAC Address for the SoftAP
-# pres_mac=$(ifconfig $phys_dev | awk '{print $5}')
-# pres_mac=$(echo $pres_mac | awk '{print $1}')
-pres_mac=$(ifconfig $pii | awk '{ print $5 }' | awk '{ print $1 }' | cut -c1-17 | sed 's/-/:/g')
-pres_mac=$(echo $pres_mac | awk '{ print $1 }')
+pres_mac=$(ifconfig $pii | awk '{print $5}' | awk '{print $1}' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g')
+pres_mac=$(echo $pres_mac | awk '{print $1}')
 #blackhole targets every single probe request on current channel
 modprobe tun
 if [ $BB == "1" ]; then
@@ -3178,14 +3176,14 @@ M)ain Menu\033[1;34m
 	}
 ##~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- WPA-- sub-functions ~~~~~~~~~~~~~~~~~~~~##
 ## wifi_101-- Launcher
-sm=$(ifconfig $pii | grep --color=never HWaddr | awk '{ print $5 }' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g')
+sm=$(ifconfig $pii | grep --color=never HWaddr | awk '{print $5}' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g')
 venue--
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-current_ver=3.0.2
-rel_date="21 March 2012"
+current_ver=3.0.4
+rel_date="24 March 2012"
 if [ "$UID" -ne 0 ];then
 	echo -e "\033[31mMust be ROOT to run this script"
 	exit 87

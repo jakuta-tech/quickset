@@ -1,6 +1,8 @@
-Current Version: 3.0.4
+#3.2
+- Fixed a bug with atk_menu--(), to where if hamster.txt existed then the script would quit without continuing.
+- Implemented a variable system for easier coding with respect to ANSI output
+- Changed all variables to lowercase except for $UID which requires capitalization.
 
-Changes:
 #3.0.4
 - Removal of leading and trailing spaces within awk statements
 - Changed MAC address output to all lowercase

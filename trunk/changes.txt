@@ -1,3 +1,4 @@
+Changes List ~~~~> quickset.sh
 #0.3
 - Added a scrollbar for all xterm sessions
 
@@ -15,13 +16,13 @@
 #0.5
 - Added in a function that allows the user to arpspoof multiple targets in one swoop
 
-#0.7
+#0.7 (22 October 2011)
 - Added an Updating Function for the script
 
-#0.7.1
+#0.7.1 (1 November 2011)
 - Added in functionality that will kill the Parent "quickset.sh" if update is launched and successful.  Prior to this, if a trap INT was called within the child, the user would be reverted back to the parent once exiting out of the child; this could be very confusing and took away the "beauty" of this script.  It's also something that I have not seen with any script which relaunches itself after updating....
 
-#0.9
+#0.9 (6 November 2011)
 - All varibles that were used for "String" comparasions have been sanitized with double quotations
 - The previous "amplification techniques" function has been removed in favor of:
   1) My idea on "Amplification" was incorrect.  Thank you for pointing out the defencies ShadowMaster.
@@ -30,7 +31,7 @@
 - An option has been added in both the Authentication function and the Packetforge-NG functions of the script that will allow the user to do SKA injection.
 - Added exit option within init_setup--()
 
-#1.3
+#1.3 (25 November 2011)
 - Fixed the bug for wifi_auth--() pointing to auth--()
 - Fixed a bug with regards to ifconfig -s for dev_check--()
 - Added xterm option for chop & frag
@@ -40,14 +41,14 @@
 - began debugging with an actual router, fixing massive problems.........
 - removed Wireless Channel Recon option in favor of consolidated wifi options under wifi_101--()
 
-#1.5
+#1.5 (26 November 2011)
 - killall -9 replaced killall for dhcpcd kill called during "Hidden Processes" kill when exiting the script
 - init_setup--() simplified
 - Automated WEP attacks menu removed, read comments for full explanation
 - Seems to be fully debugged for the wifi_101--() portion of quickset.sh
 - Still waiting on a fix for airbase-ng to prevent the segmentation fault, hence the odd versioning sequences
 
-#1.7
+#1.7 (28 November 2011)
 - Moved iptables functions to routing menu
 - Added in sleeps to allow user to read and comprehend the tables versus the old way of having them scrollback to read
 - Added proper coloring for iptable-save outputs
@@ -56,7 +57,7 @@
 - Added returns within functions to breakout of "Enable || Kill" Monitor Mode options so that if the user inadvertently picks those options, they are $
 - Small changes to variable naming for speed purposes
 
-#2.0
+#2.0 (20 December 2011)
 - Modified default MTU setting for routing purposes to 1400
 - Clarified password settings for WiFi Extender
 - Removed gateway warnings for Wireless Vaccuum/Stickypot/WiFi Extender.  Didn't like how it looked.  This will now require the user to know a little something about how their system is set up; but then again, quickset is not for skiddies.....
@@ -146,3 +147,11 @@
 - Clarified the steps needed to crack WEP in lists--() for easier understanding
 - Changed all single bracket unary operations over to the double bracket system for symetrics
 
+#3.6 (5 November 2012)
+- Modified flow of the DHCP menu
+- Changed formulation of ip_mac--()
+- Implemented IP address checking on the dhcp range for the dhcp server
+- Moved IPTABLES rules around so that IPTABLES are not called for the stickypot
+- Changed where the dhcpd files are kept
+- Changed input readability with regards to the "read" command
+- Added option to cleanup the files that dhcpd leaves

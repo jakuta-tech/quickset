@@ -155,3 +155,9 @@ Changes List ~~~~> quickset.sh
 - Changed where the dhcpd files are kept
 - Changed input readability with regards to the "read" command
 - Added option to cleanup the files that dhcpd leaves
+
+#3.8 (10 March 2013)
+- Modified how quickset handles DHCP stuff
+- Modified how quickset handles cleanup with respect to DHCP stuff
+- Changed the menu for the DHCP server
+- Changed how quickset looks for the DHCP Server process resulting in better efficiency of detecting whether or not a DHCP server was launched via quickset

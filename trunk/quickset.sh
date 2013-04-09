@@ -57,10 +57,6 @@ function script_info(){
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Figure out if old PIDs are used during a power cycle...if not we'll do PID assignments to ensure kill -9s
-
-## Use PIDs to make a greppable list 
-
 ## Add option to delete the files created by aircrack-ng during usage of wifi_101--()
 
 ## Implementation of IP check functionality for multiple tgts on arpspoof_II--() and custom dns entries on dhcp_svr--()
@@ -90,10 +86,6 @@ function script_info(){
 
 ## init_setup--() has been clarified.  The old menu was very confusing with regards to creating variables for NIC names, enabling monitor mode, etc...  The new menu is a lot more "user" friendly 
 
-## On 21 September, I matched the MTUs for the routing portions; this FINALLY made it to where the iPhone could connect....!
-## Part of the problem had been that I was trying to go with a rather high MTU 1800.....This is not recommended as the default for a LAN is 1500, I believe that the fragmentation resulting from the 1800 caused the failures.
-## After further study into the matter it seems that matching of MTUs is not to be recommended; The only MTU that needs to be changed is at0.  at0 should be set to 1400 for the MTU value.
-
 ##  On 2 Jan 2012, no_dev--() was implemented to speed up NIC naming, whereby if a user had neglected to name NICs during the initial setup; it would not slow them down later on.
 
 ## On 7 January 2012, Eterm replaced xterm.  This is a much slicker program.
@@ -114,7 +106,7 @@ function script_info(){
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Airbase-NG segmentation fault on BT5r1 (32-bit Gnome)
+## Airbase-NG usage results in an iPhone constantly reassociating every minute on the minute
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
@@ -231,7 +223,9 @@ case $init_var in
 
 	c|C) main_menu--;;
 
-	e|E) exit 0;;
+	e|E) reset
+	echo -e "\n\n"
+	exit 0;;
 
 	*) init_setup--;;
 esac
@@ -657,6 +651,16 @@ for_check=$(cat /proc/sys/net/ipv4/ip_forward)
 
 ip_mac--()
 {
+
+##ipv4
+#=`echo $input | awk -F. '{ if ( NF != 4 || length($0) > 15 || length ($0) < 7 || length($1) > 3 || length($2) > 3 || length($3) > 3 || length($4) > 3 ) print "FAIL" }'` 
+
+#ipv6
+#=`echo $input | awk -F: '{ if ( NF != 8 || length($0) > 39 || length ($0) < 15 || length($1) > 4 || length($2) > 4 || length($3) > 4 || length($4) > 4 || length($5) > 4 || length($6) > 4 || length($7) > 4 || length($8) > 4 ) print "FAIL" }'` 
+
+##MAC
+#=`echo $input | awk -F: '{ if ( NF != 6 || length($0) > 17 || length ($0) < 11 || length($1) > 2 || length($2) > 2 || length($3) > 2 || length($4) > 2 || length($5) > 2 || length($6) > 2 ) print "FAIL" }'` 
+
 case $1 in
 	ip) var=$2
 	echo $var | grep -v [^0-9.]
@@ -718,7 +722,6 @@ tchan--()
 #tc= ## tgt channel
 echo -e "$INP\nTgt Channel? (1-14)"
 read tc
-### Need to learn to case within range...Also learn if within range (with sanitization) [1-14]???
 case $tc in
 	1|2|3|4|5|6|7|8|9|10|11|12|13|14) ;;
 
@@ -933,12 +936,19 @@ case $rte_choice in
 		no_dev-- managed
 	fi
 
+	case $rte_choice in
+		3) ap_type=3 ;;
+		5) ap_type=5 ;;
+	esac
+
 	fcheck--;;
 
 	4) dev_parent="routing--"
 	if [[ -z $pii ]];then
 		no_dev-- monitor
-	fi;;
+	fi
+
+	ap_type=4;;
 esac
 
 case $rte_choice in
@@ -971,46 +981,57 @@ esac
 
 cleanup--()
 {
-if [[ $dhcp_svr_stat == "active" ]]; then
-	echo -e "$INP\nKill the DHCP Server? (y or n)"
-	read var
-	case $var in
-		y|Y) cat /tmp/dhcpd/dhcpd.pid | xargs kill -9 > /dev/null 2>&1
-		if [[ $? == 0 ]];then
-			echo -e "$OUT"
-			shred -uv /tmp/dhcpd/dhcpd.pid
-			echo -e "$OUT\nDHCP Server Successfully Killed"
-		fi;;
+## Check for DHCPD action history
+## If it existed, act appropriately
+if [[ -n $dhcp_svr_pid ]];then
+	ps aux | grep $dhcp_svr_pid | grep -v grep > /dev/null 2>&1
+	if [[ $? -eq 0 ]];then
+		echo -e "$INP\nKill the DHCP Server? (y or n)"
+		read var
+		case $var in
+			y|Y) kill -9 $dhcp_svr_pid
+			echo -e "$OUT\nDHCP Server Successfully Killed" ;;
+		esac
 
-	esac
+	fi
 
-	echo -e "$INP\nRemove /tmp/dhcpd/dhcpd.leases? (y/n)"
-	read var
-	case $var in
-		y|Y) echo -e "$OUT"
-		shred -uv /tmp/dhcpd/dhcpd.leases;;
-	esac	
+	test -f /tmp/dhcpd/dhcpd.pid
+	if [[ $? -eq 0 ]];then
+		echo -e "$INP\nRemove the DHCP Server PID file? (y or n)"
+		read var
+		case $var in
+			y|Y) echo -e "$OUT"
+			shred -uv /tmp/dhcpd/dhcpd.pid ;;
+		esac
 
-fi
+	fi
 
-if [[ $dhcp_tmp == 1 ]];then
-	var=0
-	while [[ $var == 0 ]];do
+	test -f /tmp/dhcpd/dhcpd.leases
+	if [[ $? -eq 0 ]];then
+		echo -e "$INP\nRemove /tmp/dhcpd/dhcpd.leases? (y/n)"
+		read var
+		case $var in
+			y|Y) echo -e "$OUT"
+			shred -uv /tmp/dhcpd/dhcpd.leases ;;
+		esac
+
+	fi
+
+	test $dhcpdconf
+	if [[ $? -eq 0 ]];then
 		echo -e "$INP\nRemove $dhcpdconf? (y/n)"
 		read var
 		case $var in
-			y|Y) shred -uv $dhcpdconf
-			var=1 ;;
-
-			n|N) var=1 ;;
-
-			*) ;;
+			y|Y) echo -e "$OUT"
+			shred -uv $dhcpdconf ;;
 		esac
 
-	done
+	fi
 
 fi
 
+## Check for DNS Spoofing history
+## If it existed, act appropriately
 if [[ $dns_tmp == 1 ]];then
 	var=0
 	while [[ $var == 0 ]];do
@@ -1048,6 +1069,7 @@ var=0
 
 fi
 
+reset
 echo -e "\n\n\n"
 exit
 }
@@ -1196,7 +1218,7 @@ S)ingle Tgt$HDR
 			tgt_style_II="Single Tgt"
 			fi;;
 
-			*) tgt_style_II=
+			*) tgt_style_II= ;;
 		esac
 
 		arpspoof_II--;;
@@ -1210,7 +1232,6 @@ S)ingle Tgt$HDR
 			arpspoof_II--
 		else
 			fcheck--
-
 			case $tgt_style in
 				e|E) Eterm -b black -f white --pause --title "ArpSpoof Subnet $gt_way (GW)" -e arpspoof -i $spoof_dev $gt_way &
 				atk_menu--;;
@@ -1599,8 +1620,6 @@ M)ain Menu$HDR
 
 strip_em_II--
 }
-
-
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ END atk_menu-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~ BEGIN routing-- sub-functions ~~~~~~~~~~~~~~~~~~~~~~~~##
@@ -1692,7 +1711,6 @@ shred -u /tmp/dhcpd/dhcpd.pid > /dev/null 2>&1
 echo > /tmp/dhcpd/dhcpd.leases > /dev/null 2>&1
 chown -R dhcpd:dhcpd /tmp/dhcpd/
 var=
-dhcp_svr_stat= ## Variable for Cleanup Purposes..
 dhcpdconf="/tmp/dhcpd/dhcpd.conf" ## Temp file used by dhcpd3
 
 
@@ -1703,10 +1721,34 @@ dhcpdconf="/tmp/dhcpd/dhcpd.conf" ## Temp file used by dhcpd3
 	#dns_entry=Variable for index assignments within ${dns_cus_array[@]}
 	#dns_total= Total number of indexes in the Custom DNS hosts array
 
-	clear
-	echo -e "$HDR
+		if [[ -z $ap_type ]];then
+			while [[ -z $ap_type ]];do
+				echo -e "$INP\n1) Wireless Vaccuum style DHCP Server
+
+2) StickyPot style DHCP Server
+
+3) WiFi Range Extender style DHCP Server"
+				read decide
+				case $decide in
+					1) foo=1 
+					ap_type=3 ;;
+
+					2) foo=1
+					ap_type=4 ;;
+
+					3) foo=1
+					ap_type=5 ;;
+				esac
+
+			done
+
+		fi
+
+	case $ap_type in
+		3|5) clear
+		echo -e "$HDR
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-              --DHCP Server Parameters--
+			--DHCP Server Parameters--
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$INP
 1) DHCP Server Device  [$OUT$dhcp_dev$INP]
 
@@ -1728,134 +1770,283 @@ P)revious Menu
 
 M)ain Menu$HDR
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
-	read var
-	case $var in
-		1) echo -e "$INP\nDHCP Server Device?"
-		read dhcp_dev
-		dev_check_var=$dhcp_dev
-		dev_check--
-		if [[ $dev_check == "fail" ]];then
-			dhcp_dev=
-		fi
+		read var
+		case $var in
+			1) echo -e "$INP\nDHCP Server Device?"
+			read dhcp_dev
+			dev_check_var=$dhcp_dev
+			dev_check--
+			if [[ $dev_check == "fail" ]];then
+				dhcp_dev=
+			fi
 
-		dhcp_func--;;
+			dhcp_func--;;
 
-		2) echo -e "$INP\nGateway IP Address?"
-		read sapip
-		ip_mac-- ip $sapip
-		if [[ $ip_mac == "fail" ]];then
-			sapip=
-		fi
+			2) echo -e "$INP\nGateway IP Address?"
+			read sapip
+			ip_mac-- ip $sapip
+			if [[ $ip_mac == "fail" ]];then
+				sapip=
+			fi
 
-		dhcp_func--;;
+			dhcp_func--;;
 
-		3) echo -e "$INP\nIP Range? (ex. 192.168.1.100 192.168.1.200)"
-		read sair
-		dhcp_start=$(echo $sair | awk '{print $1}')
-		dhcp_end=$(echo $sair | awk '{print $2}')
-		ip_mac-- ip $dhcp_start
-		if [[ $ip_mac == "fail" ]];then
-			sair=
-		fi
+			3) echo -e "$INP\nIP Range? (ex. 192.168.1.100 192.168.1.200)"
+			read sair
+			dhcp_start=$(echo $sair | awk '{print $1}')
+			dhcp_end=$(echo $sair | awk '{print $2}')
+			ip_mac-- ip $dhcp_start
+			if [[ $ip_mac == "fail" ]];then
+				sair=
+			fi
 
-		ip_mac-- ip $dhcp_end
-		if [[ $ip_mac == "fail" ]];then
-			sair=
-		fi
+			ip_mac-- ip $dhcp_end
+			if [[ $ip_mac == "fail" ]];then
+				sair=
+			fi
 
-		dhcp_func--;;
+			dhcp_func--;;
 
-		4) echo -e "$INP\nSubnet Mask?"
-		read sasm
-		ip_mac-- ip $sasm
-		if [[ $ip_mac == "fail" ]];then
-			sasm=
-		fi
+			4) echo -e "$INP\nSubnet Mask?"
+			read sasm
+			ip_mac-- ip $sasm
+			if [[ $ip_mac == "fail" ]];then
+				sasm=
+			fi
 
-		dhcp_func--;;
+			dhcp_func--;;
 
-		5) echo -e "$INP\nSubnet?"
-		read sas
-		ip_mac-- ip $sas
-		if [[ $ip_mac == "fail" ]];then
-			sas=
-		fi
+			5) echo -e "$INP\nSubnet?"
+			read sas
+			ip_mac-- ip $sas
+			if [[ $ip_mac == "fail" ]];then
+				sas=
+			fi
 
-		dhcp_func--;;
+			dhcp_func--;;
 
-		6) echo -e "$INP\nCreate Custom DNS Entries? (y or n)"
-		read dns_cus
-		case $dns_cus in
-			y|Y) dns_cus="Yes" 
- 			unset dns_cus_array
-			declare -a dns_cus_array
-			echo -e "$INS\nEnter the desired IP Addressess of the DNS.  End with # on a new line.\n$INP"
-			while :;do
-				read dns_entry
-				if [[ $dns_entry != \# ]];then
-					dns_cus_array=("${dns_cus_array[@]}" $dns_entry)
-				else
-					break
+			6) echo -e "$INP\nCreate Custom DNS Entries? (y or n)"
+			read dns_cus
+			case $dns_cus in
+				y|Y) dns_cus="Yes" 
+				unset dns_cus_array
+				declare -a dns_cus_array
+				echo -e "$INS\nEnter the desired IP Addressess of the DNS.  End with # on a new line.\n$INP"
+				while :;do
+					read dns_entry
+					if [[ $dns_entry != \# ]];then
+						dns_cus_array=("${dns_cus_array[@]}" $dns_entry)
+					else
+						break
+					fi
+
+				done;;
+
+				n|N) dns_cus="No" ;;
+
+				*) dns_cus= ;;
+			esac
+
+			dhcp_func--;;
+
+			7) echo -e "$INP\nCreate a Tail of the DHCP Log? (y or n)"
+			read dhcp_tail
+			case $dhcp_tail in
+				y|Y) dhcp_tail="Yes" ;;
+				n|N) dhcp_tail="No" ;;
+				*) dhcp_tail= ;;
+			esac
+
+			dhcp_func--;;
+
+			c|C) if [[ -z $dhcp_dev || -z $sapip || -z $sair || -z $sasm || -z $sas || -z $dns_cus || -z $dhcp_tail ]];then
+				echo -e "$WRN\nAll Fields Must be Filled Before Proceeding"
+				sleep 1
+				dhcp_func--
+			fi;;
+
+			p|P) routing--;;
+
+			m|M) main_menu--;;
+
+			*) dhcp_func--;;
+		esac;;
+
+			4) clear
+			echo -e "$HDR
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			--DHCP Server Parameters--
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$INP
+1) DHCP Server Device  [$OUT$dhcp_dev$INP]
+
+2) Gateway IP Address  [$OUT$sapip$INP]
+
+3) IP Range            [$OUT$sair$INP]
+
+4) Subnet Mask         [$OUT$sasm$INP]
+
+5) Subnet              [$OUT$sas$INP]
+
+6) Custom DNS Entries  [$OUT$dns_cus$INP]
+
+7) Tail DHCP Log       [$OUT$dhcp_tail$INP]
+
+C)ontinue
+
+P)revious Menu
+
+M)ain Menu$HDR
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n$INP"
+			read var
+			case $var in
+				1) echo -e "$INP\nDHCP Server Device?"
+				read dhcp_dev
+				dev_check_var=$dhcp_dev
+				dev_check--
+				if [[ $dev_check == "fail" ]];then
+					dhcp_dev=
 				fi
 
-			done;;
+				dhcp_func--;;
 
-			n|N) dns_cus="No" ;;
+				2) echo -e "$INP\nGateway IP Address?"
+				read sapip
+				ip_mac-- ip $sapip
+				if [[ $ip_mac == "fail" ]];then
+					sapip=
+				fi
 
-			*) dns_cus= ;;
+				dhcp_func--;;
+
+				3) echo -e "$INP\nIP Range? (ex. 192.168.1.100 192.168.1.200)"
+				read sair
+				dhcp_start=$(echo $sair | awk '{print $1}')
+				dhcp_end=$(echo $sair | awk '{print $2}')
+				ip_mac-- ip $dhcp_start
+				if [[ $ip_mac == "fail" ]];then
+					sair=
+				fi
+
+				ip_mac-- ip $dhcp_end
+				if [[ $ip_mac == "fail" ]];then
+					sair=
+				fi
+
+				dhcp_func--;;
+
+				4) echo -e "$INP\nSubnet Mask?"
+				read sasm
+				ip_mac-- ip $sasm
+				if [[ $ip_mac == "fail" ]];then
+					sasm=
+				fi
+
+				dhcp_func--;;
+
+				5) echo -e "$INP\nSubnet?"
+				read sas
+				ip_mac-- ip $sas
+				if [[ $ip_mac == "fail" ]];then
+					sas=
+				fi
+
+				dhcp_func--;;
+
+				6) echo -e "$INP\nCreate Custom DNS Entries? (y or n)"
+				read dns_cus
+				case $dns_cus in
+					y|Y) dns_cus="Yes" 
+					unset dns_cus_array
+					declare -a dns_cus_array
+					echo -e "$INS\nEnter the desired IP Addressess of the DNS.  End with # on a new line.\n$INP"
+					while :;do
+						read dns_entry
+						if [[ $dns_entry != \# ]];then
+							dns_cus_array=("${dns_cus_array[@]}" $dns_entry)
+						else
+							break
+						fi
+
+					done;;
+
+					n|N) dns_cus="No" ;;
+
+					*) dns_cus= ;;
+				esac
+
+				dhcp_func--;;
+
+				7) echo -e "$INP\nCreate a Tail of the DHCP Log? (y or n)"
+				read dhcp_tail
+				case $dhcp_tail in
+					y|Y) dhcp_tail="Yes" ;;
+					n|N) dhcp_tail="No" ;;
+					*) dhcp_tail= ;;
+				esac
+
+				dhcp_func--;;
+
+				c|C) if [[ -z $dhcp_dev || -z $sapip || -z $sair || -z $sasm || -z $sas || -z $dns_cus || -z $dhcp_tail ]];then
+					echo -e "$WRN\nAll Fields Must be Filled Before Proceeding"
+					sleep 1
+					dhcp_func--
+				fi;;
+
+				p|P) routing--;;
+
+				m|M) main_menu--;;
+
+				*) dhcp_func--;;
+			esac;;
+
 		esac
 
-		dhcp_func--;;
+		case $ap_type in
+			3|5) ## Echo into and remove the file to start clean
+			echo > /tmp/dhcpd/dhcpd.conf > /dev/null 2>&1
+			shred -u /tmp/dhcpd/dhcpd.conf > /dev/null 2>&1
+			## start dhcpd daemon with special configuration file
+			echo -e "$OUT\nGenerating /tmp/dhcpd/dhcpd.conf"
+			echo "authoritative;" >> /tmp/dhcpd/dhcpd.conf
+			echo "default-lease-time 7200;">> /tmp/dhcpd/dhcpd.conf
+			echo "max-lease-time 7200;" >> /tmp/dhcpd/dhcpd.conf
+			echo "min-lease-time 7200;" >> /tmp/dhcpd/dhcpd.conf
+			echo "ddns-update-style none;" >> /tmp/dhcpd/dhcpd.conf
+			echo "log-facility local7;" >> /tmp/dhcpd/dhcpd.conf
+			echo "subnet $sas netmask $sasm {" >> /tmp/dhcpd/dhcpd.conf
+			echo "range $sair;" >> /tmp/dhcpd/dhcpd.conf
+			echo "option routers $sapip;" >> /tmp/dhcpd/dhcpd.conf
+			if [[ $dns_cus == "No" ]];then
+				for dns_entry in $(grep nameserver /etc/resolv.conf | awk '{print $2}');do
+					echo "option domain-name-servers $dns_entry;" >> /tmp/dhcpd/dhcpd.conf
+				done
+			else
+				dns_total=$(echo ${#dns_cus_array[@]})
+				for (( i = 0 ; i < $dns_total ; i++ ));do
+					echo "option domain-name-servers "${dns_cus_array[$i]}";" >> /tmp/dhcpd/dhcpd.conf
+				done
+			fi
 
-		7) echo -e "$INP\nCreate a Tail of the DHCP Log? (y or n)"
-		read dhcp_tail
-		case $dhcp_tail in
-			y|Y) dhcp_tail="Yes" ;;
-			n|N) dhcp_tail="No" ;;
-			*) dhcp_tail= ;;
+			echo "}"  >> /tmp/dhcpd/dhcpd.conf
+			dhcp_tmp=1 ;; ## Variable for determining if /tmp/dhcpd/dhcpd.conf has been created
+
+			4) 	## Echo into and remove the file to start clean
+			echo > /tmp/dhcpd/dhcpd.conf > /dev/null 2>&1
+			shred -u /tmp/dhcpd/dhcpd.conf > /dev/null 2>&1
+			## start dhcpd daemon with special configuration file
+			echo -e "$OUT\nGenerating /tmp/dhcpd/dhcpd.conf"
+			echo "authoritative;" >> /tmp/dhcpd/dhcpd.conf
+			echo "default-lease-time 7200;">> /tmp/dhcpd/dhcpd.conf
+			echo "max-lease-time 7200;" >> /tmp/dhcpd/dhcpd.conf
+			echo "min-lease-time 7200;" >> /tmp/dhcpd/dhcpd.conf
+			echo "ddns-update-style none;" >> /tmp/dhcpd/dhcpd.conf
+			echo "log-facility local7;" >> /tmp/dhcpd/dhcpd.conf
+			echo "subnet $sas netmask $sasm {" >> /tmp/dhcpd/dhcpd.conf
+			echo "range $sair;" >> /tmp/dhcpd/dhcpd.conf
+			echo "}"  >> /tmp/dhcpd/dhcpd.conf
+			dhcp_tmp=1 ;; ## Variable for determining if /tmp/dhcpd/dhcpd.conf has been created
 		esac
 
-		dhcp_func--;;
-
-		c|C) if [[ -z $dhcp_dev || -z $sapip || -z $sair || -z $sasm || -z $sas || -z $dns_cus || -z $dhcp_tail ]];then
-			echo -e "$WRN\nAll Fields Must be Filled Before Proceeding"
-			sleep 1
-			dhcp_func--
-		fi;;
-
-		p|P) routing--;;
-
-		m|M) main_menu--;;
-
-		*) dhcp_func--;;
-	esac
-
-	## Echo into and remove the file to start clean
-	echo > /tmp/dhcpd/dhcpd.conf > /dev/null 2>&1
-	shred -u /tmp/dhcpd/dhcpd.conf > /dev/null 2>&1
-	## start dhcpd daemon with special configuration file
-	echo -e "$OUT\nGenerating /tmp/dhcpd/dhcpd.conf"
-	echo "default-lease-time 3600;">> /tmp/dhcpd/dhcpd.conf
-	echo "max-lease-time 7200;" >> /tmp/dhcpd/dhcpd.conf
-	echo "ddns-update-style none;" >> /tmp/dhcpd/dhcpd.conf
-	echo "authoritative;" >> /tmp/dhcpd/dhcpd.conf
-	echo "log-facility local7;" >> /tmp/dhcpd/dhcpd.conf
-	echo "subnet $sas netmask $sasm {" >> /tmp/dhcpd/dhcpd.conf
-	echo "range $sair;" >> /tmp/dhcpd/dhcpd.conf
-	echo "option routers $sapip;" >> /tmp/dhcpd/dhcpd.conf
-	if [[ $dns_cus == "No" ]];then
-		for dns_entry in $(grep nameserver /etc/resolv.conf | awk '{print $2}');do
-			echo "option domain-name-servers $dns_entry;" >> /tmp/dhcpd/dhcpd.conf
-		done
-	else
-		dns_total=$(echo ${#dns_cus_array[@]})
-		for (( i = 0 ; i < $dns_total ; i++ ));do
-			echo "option domain-name-servers "${dns_cus_array[$i]}";" >> /tmp/dhcpd/dhcpd.conf
-		done
-	fi
-
-	echo "}"  >> /tmp/dhcpd/dhcpd.conf
-	dhcp_tmp=1 ## Variable for determining if /tmp/dhcpd/dhcpd.conf has been created
 	}
 
 	dhcp_svr_II--()
@@ -1863,10 +2054,8 @@ M)ain Menu$HDR
 
 		dhcp_svr_III--()
 		{
-		dhcp_svr_stat="active"
-
 		case $rte_choice in
-			3|4|5) route add -net $sas netmask $sasm gw $sapip;;
+			3|5) route add -net $sas netmask $sasm gw $sapip;;
 		esac
 
 		case $rte_choice in
@@ -1879,6 +2068,7 @@ M)ain Menu$HDR
 		case $dhcp_tail in
 			Yes) Eterm -b black -f white --pause --title "DHCP Server Tail /tmp/dhcpd/dhcpd.leases" -e tail -f /tmp/dhcpd/dhcpd.leases & ;;
 		esac
+
 		echo -e "$INS\n\n\n\nPress Enter to Return to Routing Features"
 		read
 		routing--
@@ -1888,8 +2078,8 @@ M)ain Menu$HDR
 	echo -e "$OUT"
 	dhcpd3 -cf $dhcpdconf -pf /tmp/dhcpd/dhcpd.pid -lf /tmp/dhcpd/dhcpd.leases $dhcp_dev &
 	for (( counter=0 ; counter < 7; counter++ ));do ## counter= Simple counting variable, nothing else..
-		ps aux | grep -v grep | grep '/tmp/dhcpd/dhcpd.pid' > /dev/null 2>&1
-		if [[ $? -ne 0 ]];then
+ 		dhcp_svr_pid=$(cat /tmp/dhcpd/dhcpd.pid) > /dev/null 2>&1
+		if [[ -z $dhcp_svr_pid ]];then
 			sleep 1
         else
 			dhcpd_success="yes" ## pid_success= Variable for testing if dhcpd.pid was created
@@ -1938,7 +2128,7 @@ ap_pre_var--()
 sapip="192.168.10.1" ## SoftAP IP Address
 sasm="255.255.255.0" ## SoftAP Subnet Mask
 sac=6 ## SoftAP Channel
-mtu_size=1400 ## MTU Size
+mtu_size=1500 ## MTU Size
 dhcp_autol="Yes" ## DHCP Autolaunch for speed and intensity purposes
 ap_check="on" ## Variable to make sure these pre-variables are called if DHCP server is done prior to SoftAP
 }
@@ -2055,7 +2245,7 @@ else
 	var_meth--
 fi
 }
-
+### Should fix this loop, but it's not too important..
 ap--()
 {
 ## MAC Address for the SoftAP
@@ -2519,15 +2709,15 @@ M)ain Menu$HDR
 			done
 
 			case $r_d in
-				r|R) 	case $dt in
-						b|B) echo -e "$OUT" 
-						aireplay-ng $pii -0 3 -a $rb
-						wifi_deauth_III--;;
+				r|R) case $dt in
+					b|B) echo -e "$OUT" 
+					aireplay-ng $pii -0 3 -a $rb
+					wifi_deauth_III--;;
 
-						c|C) echo -e "$OUT" 
-						aireplay-ng $pii -0 3 -a $rb -c $cm
-						wifi_deauth_III--;;
-					esac;;
+					c|C) echo -e "$OUT" 
+					aireplay-ng $pii -0 3 -a $rb -c $cm
+					wifi_deauth_III--;;
+				esac;;
 
 				c|C) clear 
 				wifi_deauth_II--;;
@@ -2672,6 +2862,7 @@ M)ain Menu$HDR
 				1|0) ;;
 				*) ppb= ;;
 			esac
+
 		done
 
 		auth--;;
@@ -3178,7 +3369,7 @@ M)ain Menu$HDR
 		done
 
 		## Set WPA WPS flag for reaver (Y/N)
-		wash -f /tmp/WACg/capture-*.cap -C >> /tmp/WACg/wps_tmp.txt 2>/dev/null
+		wash -f /tmp/WACg/capture-*.cap -C >> /tmp/WACg/wps_tmp.txt >/dev/null 2>&1
 		cat /tmp/WACg/wps_tmp.txt |grep ":" |tr ' ' ',' |sed 's/,,,,,,/,/g' |sed 's/,,,,,,/,/g' |sed 's/,,/,/g' |sed 's/,,/,/g' |sed 's/,,/,/g' >> /tmp/WACg/wps.txt
 		sed -i 's/$/,/' /tmp/WACg/AP-WPA.txt
 		for wpsY in $(cat /tmp/WACg/wps.txt |cut -d"," -f1); do
@@ -3246,7 +3437,7 @@ M)ain Menu$HDR
 			var=1
 		fi
 
-		if [ $cnt_time -eq $cnt_time 2> /dev/null ];then
+		if [ $cnt_time -eq $cnt_time > /dev/null 2>&1 ];then
 			var=1
 		fi
 
@@ -3402,6 +3593,7 @@ M)ain Menu$HDR
 
 			*) rtech_II--;;
 		esac
+
 		parent_II= ;; ## Nulled to prevent repeat looping that is NOT wanted!
 	esac
 
@@ -3548,8 +3740,8 @@ venue--
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ END wifi_101-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-current_ver=3.6
-rel_date="5 November 2012"
+current_ver=3.8
+rel_date="10 March 2013"
 envir--
 if [[ "$UID" -ne 0 ]];then
 	echo -e "$WRN\nMust be ROOT to run this script"
@@ -3558,7 +3750,6 @@ fi
 
 if [[ -z $1  ]]; then
 	phys_dev= ## Physical NIC variable
-	pii= ## Dual mode variable, can be monitormode variable, or device to be assigned to monitor mode
 	kill_mon= ## Variable to determine if the "killing a monitor mode option" has been selected
 	dev_check= ## Nulled
 
